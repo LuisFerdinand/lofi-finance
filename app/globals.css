@@ -1,26 +1,274 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap");
 @import "tailwindcss";
+/* src/app/globals.css */
 
+/* ─── MP072 Lofi Palette ─────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand colors */
+  --palladian: #eee9df;
+  --oatmeal: #c9c1b1;
+  --blue-fantastic: #2c3b4d;
+  --burning-flame: #ffb162;
+  --truffle: #a35139;
+  --abyssal: #1b2632;
+
+  /* Semantic aliases */
+  --background: var(--palladian);
+  --foreground: var(--abyssal);
+  --card: #f5f1eb;
+  --card-foreground: var(--abyssal);
+  --popover: #f5f1eb;
+  --popover-foreground: var(--abyssal);
+  --primary: var(--burning-flame);
+  --primary-foreground: var(--abyssal);
+  --secondary: var(--oatmeal);
+  --secondary-foreground: var(--abyssal);
+  --muted: #ddd8cf;
+  --muted-foreground: #6b6258;
+  --accent: var(--truffle);
+  --accent-foreground: var(--palladian);
+  --destructive: #c0392b;
+  --destructive-foreground: #fff;
+  --border: #ccc5b8;
+  --input: #ccc5b8;
+  --ring: var(--burning-flame);
+
+  /* Pixel / lofi extras */
+  --pixel-border: 2px solid var(--abyssal);
+  --pixel-shadow: 4px 4px 0px var(--abyssal);
+  --pixel-shadow-sm: 2px 2px 0px var(--abyssal);
+  --pixel-shadow-lg: 6px 6px 0px var(--abyssal);
+  --noise-opacity: 0.04;
+
+  --radius: 0px; /* Hard pixel corners */
+  --font-pixel: "Press Start 2P", monospace;
+  --font-mono: "Space Mono", monospace;
 }
 
+/* Dark mode (blue-fantastic base) */
+.dark {
+  --background: var(--abyssal);
+  --foreground: var(--palladian);
+  --card: var(--blue-fantastic);
+  --card-foreground: var(--palladian);
+  --popover: var(--blue-fantastic);
+  --popover-foreground: var(--palladian);
+  --primary: var(--burning-flame);
+  --primary-foreground: var(--abyssal);
+  --secondary: #1e2d3d;
+  --secondary-foreground: var(--oatmeal);
+  --muted: #1e2d3d;
+  --muted-foreground: var(--oatmeal);
+  --accent: var(--truffle);
+  --accent-foreground: var(--palladian);
+  --border: #2a3d52;
+  --input: #2a3d52;
+  --ring: var(--burning-flame);
+}
+
+/* ─── Tailwind v4 Theme ──────────────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Direct brand colors accessible as Tailwind classes */
+  --color-palladian: #eee9df;
+  --color-oatmeal: #c9c1b1;
+  --color-blue-fantastic: #2c3b4d;
+  --color-burning-flame: #ffb162;
+  --color-truffle: #a35139;
+  --color-abyssal: #1b2632;
+
+  --font-sans: "Space Mono", monospace;
+  --font-mono: "Space Mono", monospace;
+  --font-pixel: "Press Start 2P", monospace;
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Base Styles ────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  image-rendering: pixelated;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Space Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-font-smoothing: none; /* lofi / pixel feel */
+  min-height: 100dvh;
+  position: relative;
+}
+
+/* Subtle noise texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ─── Pixel UI Components ────────────────────────────────────────────── */
+.pixel-box {
+  border: var(--pixel-border);
+  box-shadow: var(--pixel-shadow);
+}
+
+.pixel-box-sm {
+  border: var(--pixel-border);
+  box-shadow: var(--pixel-shadow-sm);
+}
+
+.pixel-box-lg {
+  border: var(--pixel-border);
+  box-shadow: var(--pixel-shadow-lg);
+}
+
+.pixel-btn {
+  border: var(--pixel-border);
+  box-shadow: var(--pixel-shadow-sm);
+  transition: all 80ms;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pixel-btn:active {
+  box-shadow: none;
+  transform: translate(2px, 2px);
+}
+
+.pixel-inset {
+  border: 2px solid var(--abyssal);
+  box-shadow: inset 2px 2px 0px rgba(0, 0, 0, 0.15);
+}
+
+.pixel-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1.5px solid currentColor;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────── */
+.font-pixel {
+  font-family: var(--font-pixel);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-pixel);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--oatmeal);
+  border: 2px solid var(--abyssal);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--burning-flame);
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────── */
+@keyframes pixel-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pixel-scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+.animate-pixel-blink {
+  animation: pixel-blink 1s step-end infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out;
+}
+
+/* ─── Scanline effect ────────────────────────────────────────────────── */
+.scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
+
+/* ─── Income / Expense color utils ──────────────────────────────────── */
+.income-text { color: var(--burning-flame); }
+.expense-text { color: var(--truffle); }
+.income-bg { background-color: var(--burning-flame); }
+.expense-bg { background-color: var(--truffle); }
+.income-border { border-color: var(--burning-flame); }
+.expense-border { border-color: var(--truffle); }
+
+/* ─── Recharts custom ────────────────────────────────────────────────── */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--card) !important;
+  border: var(--pixel-border) !important;
+  box-shadow: var(--pixel-shadow-sm) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
 }
