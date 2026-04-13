@@ -1,4 +1,5 @@
-// src/components/dashboard/MonthlyChart.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// components/dashboard/MonthlyChart.tsx
 "use client";
 
 import {
@@ -58,7 +59,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer width="100%" height={350}>
         <BarChart data={chartData} barGap={2} barCategoryGap="30%">
           <XAxis
             dataKey="month"

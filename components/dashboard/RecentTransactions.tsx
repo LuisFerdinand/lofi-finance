@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// components/dashboard/RecentTransactions.tsx
 import Link from "next/link";
 import { centsToDisplay, formatDate, getCategoryEmoji, getCategoryLabel } from "@/utils";
 import type { Transaction } from "@/db/schema";

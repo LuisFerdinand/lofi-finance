@@ -1,5 +1,7 @@
+// components/dashboard/CategoryChart.tsx
 "use client";
 
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { centsToDisplay, getCategoryLabel, getCategoryEmoji } from "@/utils";
 import type { CategoryBreakdown } from "@/types";
 
@@ -18,6 +20,22 @@ const COLORS = [
   "#a8956a",
 ];
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const CustomTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const item = payload[0].payload;
+  return (
+    <div className="pixel-box bg-card p-3 text-xs font-mono">
+      <p className="font-pixel mb-1" style={{ fontSize: "8px" }}>
+        {getCategoryEmoji(item.category)} {getCategoryLabel(item.category)}
+      </p>
+      <p className="text-muted-foreground">{centsToDisplay(item.total)}</p>
+      <p className="text-muted-foreground">{item.percentage}%</p>
+    </div>
+  );
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 export default function CategoryChart({ data }: CategoryChartProps) {
   const top = data.slice(0, 6);
 
@@ -30,43 +48,58 @@ export default function CategoryChart({ data }: CategoryChartProps) {
           no data yet
         </p>
       ) : (
-        <div className="space-y-3">
-          {top.map((item, i) => (
-            <div key={item.category}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{getCategoryEmoji(item.category)}</span>
+        <>
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie
+                data={top}
+                dataKey="total"
+                nameKey="category"
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={75}
+                stroke="var(--abyssal)"
+                strokeWidth={2}
+                paddingAngle={1}
+              >
+                {top.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+
+          {/* Legend */}
+          <div className="space-y-1.5 mt-3">
+            {top.map((item, i) => (
+              <div
+                key={item.category}
+                className="flex items-center justify-between gap-2"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="w-3 h-3 border border-abyssal shrink-0"
+                    style={{ background: COLORS[i % COLORS.length] }}
+                  />
+                  <span className="text-sm shrink-0">
+                    {getCategoryEmoji(item.category)}
+                  </span>
                   <span className="font-mono text-xs truncate">
                     {getCategoryLabel(item.category)}
                   </span>
                 </div>
-                <span className="font-pixel text-xs shrink-0 ml-2" style={{ fontSize: "8px" }}>
+                <span
+                  className="font-pixel text-xs shrink-0"
+                  style={{ fontSize: "8px" }}
+                >
                   {item.percentage}%
                 </span>
               </div>
-              {/* Pixel progress bar */}
-              <div className="h-3 bg-muted border border-abyssal relative overflow-hidden">
-                <div
-                  className="h-full transition-all"
-                  style={{
-                    width: `${item.percentage}%`,
-                    background: COLORS[i % COLORS.length],
-                  }}
-                />
-                {/* Pixel grid overlay */}
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-30"
-                  style={{
-                    backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.3) 4px)",
-                  }}
-                />
-              </div>
-              <p className="font-mono text-xs text-muted-foreground mt-0.5">
-                {centsToDisplay(item.total)}
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+// components/dashboard/StatsGrid.tsx
 import { centsToDisplay } from "@/utils";
 import type { MonthlyStats } from "@/types";
 import { TrendingUp, TrendingDown, Wallet, Activity } from "lucide-react";
