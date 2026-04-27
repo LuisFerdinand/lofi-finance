@@ -1,14 +1,16 @@
+// components/layout/MobileNav.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils";
-import { LayoutDashboard, ArrowLeftRight, Users } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, Users } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "HOME", icon: LayoutDashboard, role: ["admin", "user"] },
-  { href: "/transactions", label: "TXN", icon: ArrowLeftRight, role: ["admin", "user"] },
-  { href: "/admin", label: "ADMIN", icon: Users, role: ["admin"] },
+  { href: "/dashboard",    label: "HOME",  icon: LayoutDashboard, role: ["admin", "user"] },
+  { href: "/transactions", label: "TXN",   icon: ArrowLeftRight,  role: ["admin", "user"] },
+  { href: "/goals",        label: "GOALS", icon: PiggyBank,       role: ["admin", "user"] },
+  { href: "/admin",        label: "ADMIN", icon: Users,           role: ["admin"] },
 ];
 
 export default function MobileNav({ role }: { role: "admin" | "user" }) {
@@ -26,9 +28,7 @@ export default function MobileNav({ role }: { role: "admin" | "user" }) {
               href={item.href}
               className={cn(
                 "flex-1 flex flex-col items-center justify-center py-3 gap-1 font-pixel text-xs transition-all",
-                isActive
-                  ? "text-burning-flame bg-blue-fantastic"
-                  : "text-oatmeal"
+                isActive ? "text-burning-flame bg-blue-fantastic" : "text-oatmeal"
               )}
             >
               <item.icon size={16} />

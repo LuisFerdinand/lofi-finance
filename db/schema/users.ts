@@ -1,3 +1,4 @@
+// db/schema/users.ts
 import {
   pgTable,
   text,

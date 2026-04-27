@@ -1,20 +1,16 @@
+// types/index.ts
 export type Role = "admin" | "user";
 export type TransactionType = "income" | "expense";
 export type Category =
-  | "salary"
-  | "freelance"
-  | "investment"
-  | "gift"
-  | "other_income"
-  | "food"
-  | "transport"
-  | "housing"
-  | "entertainment"
-  | "health"
-  | "shopping"
-  | "education"
-  | "utilities"
-  | "other_expense";
+  | "salary" | "freelance" | "investment" | "gift" | "other_income"
+  | "food" | "transport" | "housing" | "entertainment" | "health"
+  | "shopping" | "education" | "utilities" | "other_expense";
+
+export type GoalStatus = "active" | "completed" | "cancelled";
+export type GoalIcon =
+  | "home" | "car" | "plane" | "laptop" | "heart"
+  | "graduation" | "ring" | "baby" | "piggy" | "star"
+  | "shield" | "zap";
 
 export interface TransactionFilters {
   type?: TransactionType;

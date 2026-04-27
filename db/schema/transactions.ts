@@ -1,4 +1,4 @@
-// src/db/schema/transactions.ts
+// db/schema/transactions.ts
 import {
   pgTable,
   text,

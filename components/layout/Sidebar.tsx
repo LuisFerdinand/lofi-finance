@@ -1,16 +1,17 @@
-// src/components/layout/Sidebar.tsx
+// components/layout/Sidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils";
-import { LayoutDashboard, ArrowLeftRight, Users } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Users, PiggyBank } from "lucide-react";
 import LogoMark from "./LogoMark";
 
 const navItems = [
-  { href: "/dashboard", label: "DASHBOARD", icon: LayoutDashboard, role: ["admin", "user"] },
-  { href: "/transactions", label: "TRANSACTIONS", icon: ArrowLeftRight, role: ["admin", "user"] },
-  { href: "/admin", label: "ADMIN", icon: Users, role: ["admin"] },
+  { href: "/dashboard",    label: "DASHBOARD",    icon: LayoutDashboard, role: ["admin", "user"] },
+  { href: "/transactions", label: "TRANSACTIONS", icon: ArrowLeftRight,  role: ["admin", "user"] },
+  { href: "/goals",        label: "GOALS",        icon: PiggyBank,       role: ["admin", "user"] },
+  { href: "/admin",        label: "ADMIN",        icon: Users,           role: ["admin"] },
 ];
 
 export default function Sidebar({ role }: { role: "admin" | "user" }) {
@@ -23,7 +24,7 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
         <div className="flex items-center gap-3">
           <div
             className="pixel-box-sm bg-burning-flame flex items-center justify-center shrink-0"
-            style={{ width: 40, height: 40 }}
+            style={{ width: 36, height: 36 }}
           >
             <LogoMark size={24} />
           </div>

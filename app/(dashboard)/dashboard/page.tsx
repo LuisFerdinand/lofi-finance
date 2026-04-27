@@ -1,12 +1,13 @@
+// src/app/(dashboard)/dashboard/page.tsx
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getMonthlyStats, getMonthlyTrend, getCategoryBreakdown } from "@/utils/transactions";
+import { getMonthlyStats, getMonthlyTrend, getCategoryBreakdown, getTransactions } from "@/utils/transactions";
 import { getCurrentMonthYear, formatMonth } from "@/utils";
 import StatsGrid from "@/components/dashboard/StatsGrid";
 import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CategoryChart from "@/components/dashboard/CategoryChart";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
-import { getTransactions } from "@/utils/transactions";
+import GoalsDashboardWidget from "@/components/goals/GoalsDashboardWidget";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -31,18 +32,17 @@ export default async function DashboardPage() {
             {formatMonth(month, year)}
           </p>
         </div>
-        <div className="pixel-tag bg-burning-flame text-abyssal border-abyssal">
-          LIVE
-        </div>
+        <div className="pixel-tag bg-burning-flame text-abyssal border-abyssal">LIVE</div>
       </div>
 
       {/* Stats */}
       <StatsGrid stats={stats} />
 
-      {/* Charts row */}
+      {/* Charts + Goals widget */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
           <MonthlyChart data={trend} />
+          <GoalsDashboardWidget userId={session.user.id} />
         </div>
         <div>
           <CategoryChart data={expenseBreakdown} />

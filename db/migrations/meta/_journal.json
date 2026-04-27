@@ -8,6 +8,13 @@
       "when": 1775794498107,
       "tag": "0000_furry_paibok",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777295869028,
+      "tag": "0001_long_maggott",
+      "breakpoints": true
     }
   ]
 }
