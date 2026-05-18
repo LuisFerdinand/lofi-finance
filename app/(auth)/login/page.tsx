@@ -93,7 +93,7 @@ export default function LoginPage() {
       </div>
 
       {/* Demo credentials hint */}
-      <div className="mt-4 border border-dashed border-oatmeal p-3 bg-muted">
+      {/* <div className="mt-4 border border-dashed border-oatmeal p-3 bg-muted">
         <p className="font-pixel text-xs text-muted-foreground mb-1">DEMO</p>
         <p className="font-mono text-xs text-foreground">
           admin@lofifinance.com / admin123
@@ -101,7 +101,7 @@ export default function LoginPage() {
         <p className="font-mono text-xs text-foreground">
           alex@lofifinance.com / user123
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }
