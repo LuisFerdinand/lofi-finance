@@ -1,25 +1,49 @@
-// utils/goals-helpers.ts
+// utils/goals-helpers.tsx
 // ⚠️  NO server imports here — this file is safe to import in client components
 
+import {
+  Home,
+  Car,
+  Plane,
+  Laptop,
+  Heart,
+  GraduationCap,
+  Gem,
+  Baby,
+  PiggyBank,
+  Star,
+  Shield,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import type { GoalIcon } from "@/types";
 
-export const GOAL_ICONS: Record<GoalIcon, string> = {
-  home:       "🏠",
-  car:        "🚗",
-  plane:      "✈️",
-  laptop:     "💻",
-  heart:      "❤️",
-  graduation: "🎓",
-  ring:       "💍",
-  baby:       "👶",
-  piggy:      "🐷",
-  star:       "⭐",
-  shield:     "🛡️",
-  zap:        "⚡",
+export const GOAL_ICON_MAP: Record<GoalIcon, LucideIcon> = {
+  home: Home,
+  car: Car,
+  plane: Plane,
+  laptop: Laptop,
+  heart: Heart,
+  graduation: GraduationCap,
+  ring: Gem,
+  baby: Baby,
+  piggy: PiggyBank,
+  star: Star,
+  shield: Shield,
+  zap: Zap,
 };
 
-export function getGoalEmoji(icon: GoalIcon): string {
-  return GOAL_ICONS[icon] ?? "🐷";
+export function GoalIconDisplay({
+  icon,
+  size = 20,
+  className,
+}: {
+  icon: GoalIcon;
+  size?: number;
+  className?: string;
+}) {
+  const Icon = GOAL_ICON_MAP[icon] ?? PiggyBank;
+  return <Icon size={size} className={className} />;
 }
 
 export function calcProgress(current: number, target: number): number {

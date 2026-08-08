@@ -6,6 +6,7 @@ import { getCurrentMonthYear, formatMonth, centsToDisplay } from "@/utils";
 import TransactionList from "@/components/transactions/TransactionList";
 import TransactionFiltersBar from "@/components/transactions/TransactionFiltersBar";
 import MonthPicker from "@/components/transactions/MonthPicker";
+import AddTransactionButton from "@/components/transactions/AddTransactionButton";
 import type { TransactionFilters } from "@/types";
 
 interface PageProps {
@@ -47,12 +48,15 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-4 animate-slide-up">
-      {/* Header — no Add button here, it's global in the layout */}
-      <div>
-        <h1 className="font-pixel text-sm leading-relaxed">TRANSACTIONS</h1>
-        <p className="font-mono text-xs text-muted-foreground mt-1">
-          {result.total} records · {formatMonth(month, year)}
-        </p>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-pixel text-sm leading-relaxed">TRANSACTIONS</h1>
+          <p className="font-mono text-xs text-muted-foreground mt-1">
+            {result.total} records · {formatMonth(month, year)}
+          </p>
+        </div>
+        <AddTransactionButton />
       </div>
 
       {/* Month picker */}

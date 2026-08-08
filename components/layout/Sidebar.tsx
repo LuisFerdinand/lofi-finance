@@ -1,68 +1,158 @@
 // components/layout/Sidebar.tsx
 "use client";
 
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils";
-import { LayoutDashboard, ArrowLeftRight, Users, PiggyBank } from "lucide-react";
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  Users,
+  PiggyBank,
+  ListTodo,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import LogoMark from "./LogoMark";
+import Tooltip from "@/components/ui/Tooltip";
+import { APP_VERSION } from "@/lib/version";
 
-const navItems = [
-  { href: "/dashboard",    label: "DASHBOARD",    icon: LayoutDashboard, role: ["admin", "user"] },
-  { href: "/transactions", label: "TRANSACTIONS", icon: ArrowLeftRight,  role: ["admin", "user"] },
-  { href: "/goals",        label: "GOALS",        icon: PiggyBank,       role: ["admin", "user"] },
-  { href: "/admin",        label: "ADMIN",        icon: Users,           role: ["admin"] },
+const navGroups = [
+  {
+    label: "OVERVIEW",
+    items: [
+      { href: "/dashboard", label: "DASHBOARD", icon: LayoutDashboard, role: ["admin", "user"] },
+    ],
+  },
+  {
+    label: "FINANCE",
+    items: [
+      { href: "/transactions", label: "TRANSACTIONS", icon: ArrowLeftRight, role: ["admin", "user"] },
+      { href: "/goals", label: "GOALS", icon: PiggyBank, role: ["admin", "user"] },
+    ],
+  },
+  {
+    label: "WORK",
+    items: [
+      { href: "/projects", label: "PROJECTS", icon: ListTodo, role: ["admin", "user"] },
+    ],
+  },
+  {
+    label: "ADMIN",
+    items: [
+      { href: "/admin", label: "ADMIN", icon: Users, role: ["admin"] },
+    ],
+  },
 ];
+
+const COLLAPSE_KEY = "lofi:sidebarCollapsed";
 
 export default function Sidebar({ role }: { role: "admin" | "user" }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
 
   return (
-    <aside className="hidden md:flex flex-col w-56 bg-abyssal text-palladian border-r-2 border-abyssal shrink-0">
+    <aside
+      className={cn(
+        "hidden md:flex flex-col bg-abyssal text-palladian border-r-2 border-abyssal shrink-0 transition-all duration-200",
+        collapsed ? "w-16" : "w-56"
+      )}
+    >
       {/* Logo */}
-      <div className="p-5 border-b-2 border-blue-fantastic">
-        <div className="flex items-center gap-3">
+      <div className={cn("p-5 border-b-2 border-blue-fantastic", collapsed && "px-3")}>
+        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
           <div
             className="pixel-box-sm bg-burning-flame flex items-center justify-center shrink-0"
             style={{ width: 36, height: 36 }}
           >
             <LogoMark size={24} />
           </div>
-          <div>
-            <p className="font-pixel text-xs text-burning-flame leading-tight">LoFi</p>
-            <p className="font-pixel text-xs text-palladian leading-tight">Finance</p>
-          </div>
+          {!collapsed && (
+            <div>
+              <p className="font-pixel text-xs text-burning-flame leading-tight">LoFi</p>
+              <p className="font-pixel text-xs text-palladian leading-tight">Finance</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems
-          .filter((item) => item.role.includes(role))
-          .map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 font-pixel text-xs transition-all",
-                  isActive
-                    ? "bg-burning-flame text-abyssal pixel-box-sm"
-                    : "text-oatmeal hover:text-burning-flame hover:bg-blue-fantastic"
-                )}
-              >
-                <item.icon size={12} />
-                <span className="leading-none">{item.label}</span>
-              </Link>
-            );
-          })}
+      {/* Nav — grouped sections */}
+      <nav className={cn("flex-1 p-4 space-y-4 overflow-y-auto", collapsed && "px-2")}>
+        {navGroups.map((group) => {
+          const items = group.items.filter((item) => item.role.includes(role));
+          if (items.length === 0) return null;
+          return (
+            <div key={group.label} className="space-y-1">
+              {!collapsed && (
+                <p className="font-pixel text-blue-fantastic px-3 mb-1" style={{ fontSize: "7px" }}>
+                  {group.label}
+                </p>
+              )}
+              {items.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                const linkContent = (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-3 font-pixel text-xs transition-all",
+                      collapsed && "justify-center px-0",
+                      isActive
+                        ? "bg-burning-flame text-abyssal pixel-box-sm"
+                        : "text-oatmeal hover:text-burning-flame hover:bg-blue-fantastic"
+                    )}
+                  >
+                    <item.icon size={12} />
+                    {!collapsed && <span className="leading-none">{item.label}</span>}
+                  </Link>
+                );
+                return collapsed ? (
+                  <Tooltip key={item.href} label={item.label}>{linkContent}</Tooltip>
+                ) : (
+                  <Fragment key={item.href}>{linkContent}</Fragment>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
-      {/* Version */}
-      <div className="p-4 border-t-2 border-blue-fantastic">
-        <p className="font-pixel text-xs text-blue-fantastic">v0.1.0</p>
-        <p className="font-mono text-xs text-blue-fantastic mt-1">lofi finance</p>
+      {/* Collapse toggle + version */}
+      <div className={cn("p-4 border-t-2 border-blue-fantastic", collapsed && "px-2")}>
+        <button
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
+          className={cn(
+            "w-full flex items-center justify-center gap-2 pixel-btn bg-blue-fantastic text-palladian py-2 hover:bg-burning-flame hover:text-abyssal transition-colors mb-3"
+          )}
+        >
+          {collapsed ? (
+            <ChevronsRight size={12} />
+          ) : (
+            <>
+              <ChevronsLeft size={12} />
+              <span className="font-pixel" style={{ fontSize: "8px" }}>COLLAPSE</span>
+            </>
+          )}
+        </button>
+        {!collapsed && (
+          <>
+            <p className="font-pixel text-xs text-blue-fantastic">v{APP_VERSION}</p>
+            <p className="font-mono text-xs text-blue-fantastic mt-1">lofi finance</p>
+          </>
+        )}
       </div>
     </aside>
   );

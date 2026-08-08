@@ -8,6 +8,7 @@ import MonthlyChart from "@/components/dashboard/MonthlyChart";
 import CategoryChart from "@/components/dashboard/CategoryChart";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import GoalsDashboardWidget from "@/components/goals/GoalsDashboardWidget";
+import AddTransactionButton from "@/components/transactions/AddTransactionButton";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -32,7 +33,10 @@ export default async function DashboardPage() {
             {formatMonth(month, year)}
           </p>
         </div>
-        <div className="pixel-tag bg-burning-flame text-abyssal border-abyssal">LIVE</div>
+        <div className="flex items-center gap-2">
+          <div className="pixel-tag bg-burning-flame text-abyssal border-abyssal">LIVE</div>
+          <AddTransactionButton />
+        </div>
       </div>
 
       {/* Stats */}

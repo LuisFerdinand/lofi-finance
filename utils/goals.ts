@@ -8,26 +8,8 @@ import type { SavingsGoal, GoalContribution } from "@/db/schema/goals";
 import type { GoalIcon } from "@/types";
 
 // ─── Pure helpers (no DB — safe to import anywhere) ──────────────────────────
-// NOTE: these are re-exported from utils/goals-helpers.ts for client components
-
-export const GOAL_ICONS: Record<GoalIcon, string> = {
-  home:       "🏠",
-  car:        "🚗",
-  plane:      "✈️",
-  laptop:     "💻",
-  heart:      "❤️",
-  graduation: "🎓",
-  ring:       "💍",
-  baby:       "👶",
-  piggy:      "🐷",
-  star:       "⭐",
-  shield:     "🛡️",
-  zap:        "⚡",
-};
-
-export function getGoalEmoji(icon: GoalIcon): string {
-  return GOAL_ICONS[icon] ?? "🐷";
-}
+// NOTE: icon rendering lives in utils/goals-helpers.tsx (GOAL_ICON_MAP / GoalIconDisplay)
+// since it needs JSX; these numeric helpers are re-exported there for client components.
 
 export function calcProgress(current: number, target: number): number {
   if (target <= 0) return 0;

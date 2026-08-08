@@ -111,26 +111,6 @@ export function getCategoryLabel(category: Category): string {
   return labels[category] ?? category;
 }
 
-export function getCategoryEmoji(category: Category): string {
-  const emojis: Record<Category, string> = {
-    salary: "💼",
-    freelance: "🎨",
-    investment: "📈",
-    gift: "🎁",
-    other_income: "💰",
-    food: "🍜",
-    transport: "🚌",
-    housing: "🏠",
-    entertainment: "🎮",
-    health: "💊",
-    shopping: "🛒",
-    education: "📚",
-    utilities: "💡",
-    other_expense: "📦",
-  };
-  return emojis[category] ?? "💸";
-}
-
 export function isIncomeCategory(category: Category): boolean {
   return INCOME_CATEGORIES.includes(category);
 }

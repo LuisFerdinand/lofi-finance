@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import TopBar from "@/components/layout/TopBar";
-import GlobalAddButton from "@/components/transactions/GlobalAddButton";
 
 export default async function DashboardLayout({
   children,
@@ -26,9 +25,6 @@ export default async function DashboardLayout({
           {children}
         </main>
       </div>
-
-      {/* Floating add button — visible on every dashboard page */}
-      <GlobalAddButton />
 
       {/* Mobile bottom nav */}
       <MobileNav role={session.user.role} />

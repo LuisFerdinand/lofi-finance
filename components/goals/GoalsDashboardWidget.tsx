@@ -1,6 +1,6 @@
 // components/goals/GoalsDashboardWidget.tsx
 import { getGoals } from "@/utils/goals"; // server-only — fine, this is a server component
-import { getGoalEmoji, calcProgress } from "@/utils/goals-helpers";
+import { GoalIconDisplay, calcProgress } from "@/utils/goals-helpers";
 import { centsToDisplay } from "@/utils";
 import type { GoalIcon } from "@/types";
 import Link from "next/link";
@@ -42,7 +42,7 @@ export default async function GoalsDashboardWidget({ userId }: Props) {
               <Link key={goal.id} href={`/goals/${goal.id}`}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors group"
               >
-                <span className="text-lg shrink-0">{getGoalEmoji(goal.icon as GoalIcon)}</span>
+                <GoalIconDisplay icon={goal.icon as GoalIcon} size={18} className="shrink-0 text-abyssal" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-mono text-xs font-bold truncate">{goal.name}</p>

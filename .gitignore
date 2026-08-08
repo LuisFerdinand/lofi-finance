@@ -45,3 +45,6 @@ scripts/
 
 #db
 db/migrations/
+
+# claude
+.claude/

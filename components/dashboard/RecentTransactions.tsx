@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // components/dashboard/RecentTransactions.tsx
 import Link from "next/link";
-import { centsToDisplay, formatDate, getCategoryEmoji, getCategoryLabel } from "@/utils";
+import { centsToDisplay, formatDate, getCategoryLabel } from "@/utils";
+import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { Transaction } from "@/db/schema";
 import { ArrowRight } from "lucide-react";
 
@@ -35,8 +36,8 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
               className="flex items-center gap-3 p-3 bg-background border border-border hover:border-burning-flame transition-colors"
             >
               {/* Category icon */}
-              <div className="w-8 h-8 bg-muted border border-border flex items-center justify-center shrink-0 text-base">
-                {getCategoryEmoji(tx.category as any)}
+              <div className="w-8 h-8 bg-muted border border-border flex items-center justify-center shrink-0">
+                <CategoryIconDisplay category={tx.category as any} size={16} />
               </div>
 
               {/* Details */}

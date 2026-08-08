@@ -1,5 +1,4 @@
 // src/app/(auth)/layout.tsx
-import LogoMark from "@/components/layout/LogoMark";
 
 export default function AuthLayout({
   children,
@@ -25,23 +24,9 @@ export default function AuthLayout({
       <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-abyssal opacity-40" />
       <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-abyssal opacity-40" />
 
-      <div className="w-full max-w-sm relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center pixel-box bg-burning-flame mb-3"
-            style={{ width: 64, height: 64 }}
-          >
-            <LogoMark size={40} />
-          </div>
-          <h1 className="font-pixel text-abyssal text-sm leading-loose">
-            LoFi<br />Finance
-          </h1>
-          <p className="text-muted-foreground text-xs mt-2 font-mono">
-            your cozy money tracker
-          </p>
-        </div>
-
+      {/* Width is controlled per-page — register stays a narrow single card,
+          login widens into a two-column layout on desktop. */}
+      <div className="w-full flex justify-center relative z-10">
         {children}
       </div>
     </div>

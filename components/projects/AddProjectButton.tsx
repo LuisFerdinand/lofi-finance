@@ -1,17 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// components/goals/AddGoalButton.tsx
+// components/projects/AddProjectButton.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
-import { GOAL_ICON_MAP } from "@/utils/goals-helpers"; // ← client-safe import
-import type { GoalIcon } from "@/types";
-import RupiahInput from "@/components/ui/RupiahInput";
+import { PROJECT_ICON_MAP } from "@/utils/projects-helpers";
 import IconPicker from "@/components/ui/IconPicker";
 
-export default function AddGoalButton() {
+export default function AddProjectButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -20,45 +17,37 @@ export default function AddGoalButton() {
         className="pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 flex items-center gap-2 shrink-0"
         style={{ fontSize: "9px" }}
       >
-        <Plus size={12} /> NEW GOAL
+        <Plus size={12} /> NEW PROJECT
       </button>
-      {open && <AddGoalModal onClose={() => setOpen(false)} />}
+      {open && <AddProjectModal onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function AddGoalModal({ onClose }: { onClose: () => void }) {
+function AddProjectModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [targetAmount, setTargetAmount] = useState(0);
-  const [form, setForm] = useState({
-    name: "",
-    notes: "",
-    icon: "piggy" as GoalIcon,
-    deadline: "",
-  });
+  const [form, setForm] = useState({ name: "", description: "", icon: "folder" });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!targetAmount || targetAmount <= 0) { toast.error("enter a target amount"); return; }
+    if (!form.name.trim()) { toast.error("enter a project name"); return; }
     setLoading(true);
     try {
-      const res = await fetch("/api/goals", {
+      const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          targetAmount,
-          deadline: form.deadline || undefined,
-          notes: form.notes || undefined,
-        }),
+        body: JSON.stringify({ ...form, description: form.description || undefined }),
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-      toast.success("goal created!");
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error);
+      }
+      toast.success("project created!");
       router.refresh();
       onClose();
     } catch (err: any) {
-      toast.error(err.message ?? "failed to create goal");
+      toast.error(err.message ?? "failed to create project");
     } finally {
       setLoading(false);
     }
@@ -71,7 +60,7 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
     >
       <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[90dvh] overflow-y-auto">
         <div className="bg-abyssal text-palladian px-4 py-3 flex items-center justify-between sticky top-0">
-          <span className="font-pixel text-xs">NEW SAVINGS GOAL</span>
+          <span className="font-pixel text-xs">NEW PROJECT</span>
           <button onClick={onClose} className="text-oatmeal hover:text-burning-flame transition-colors">
             <X size={14} />
           </button>
@@ -82,7 +71,7 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
           <div>
             <label className="font-pixel block mb-2" style={{ fontSize: "8px" }}>ICON</label>
             <IconPicker
-              icons={GOAL_ICON_MAP}
+              icons={PROJECT_ICON_MAP}
               value={form.icon}
               onChange={(icon) => setForm({ ...form, icon })}
             />
@@ -90,7 +79,7 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
 
           {/* Name */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>GOAL NAME</label>
+            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>PROJECT NAME</label>
             <input
               type="text"
               required
@@ -98,38 +87,21 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-burning-flame placeholder:text-muted-foreground"
-              placeholder="e.g. New Laptop, Emergency Fund..."
+              placeholder="e.g. Home Renovation, Website Launch..."
             />
           </div>
 
-          {/* Target amount */}
-          <RupiahInput value={targetAmount} onChange={setTargetAmount} required label="TARGET AMOUNT (Rp)" />
-
-          {/* Deadline */}
+          {/* Description */}
           <div>
             <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
-              DEADLINE <span className="text-muted-foreground">(optional)</span>
-            </label>
-            <input
-              type="date"
-              value={form.deadline}
-              min={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-              className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
-            />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
-              NOTES <span className="text-muted-foreground">(optional)</span>
+              DESCRIPTION <span className="text-muted-foreground">(optional)</span>
             </label>
             <textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={2}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none placeholder:text-muted-foreground resize-none"
-              placeholder="Why are you saving for this?"
+              placeholder="What's this project about?"
             />
           </div>
 
@@ -139,7 +111,7 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
             className="w-full pixel-btn bg-burning-flame text-abyssal font-pixel py-3 disabled:opacity-60"
             style={{ fontSize: "9px" }}
           >
-            {loading ? "CREATING..." : "► CREATE GOAL"}
+            {loading ? "CREATING..." : "► CREATE PROJECT"}
           </button>
         </form>
       </div>

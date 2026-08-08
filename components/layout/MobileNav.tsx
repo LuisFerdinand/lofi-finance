@@ -4,12 +4,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils";
-import { LayoutDashboard, ArrowLeftRight, PiggyBank, Users } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, Users, ListTodo } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard",    label: "HOME",  icon: LayoutDashboard, role: ["admin", "user"] },
   { href: "/transactions", label: "TXN",   icon: ArrowLeftRight,  role: ["admin", "user"] },
   { href: "/goals",        label: "GOALS", icon: PiggyBank,       role: ["admin", "user"] },
+  { href: "/projects",     label: "TODOS", icon: ListTodo,        role: ["admin", "user"] },
   { href: "/admin",        label: "ADMIN", icon: Users,           role: ["admin"] },
 ];
 

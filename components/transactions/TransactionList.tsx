@@ -4,9 +4,10 @@
 import { useState, useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { centsToDisplay, formatDate, getCategoryEmoji, getCategoryLabel } from "@/utils";
+import { centsToDisplay, formatDate, getCategoryLabel } from "@/utils";
+import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { Transaction } from "@/db/schema";
-import { Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import EditTransactionModal from "./EditTransactionModal";
 
 interface TransactionListProps {
@@ -99,7 +100,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
 
             {/* Category */}
             <div className="flex items-center gap-1.5">
-              <span className="text-sm leading-none">{getCategoryEmoji(tx.category as any)}</span>
+              <CategoryIconDisplay category={tx.category as any} size={14} className="shrink-0 text-muted-foreground" />
               <span className="font-mono text-xs text-muted-foreground truncate">
                 {getCategoryLabel(tx.category as any)}
               </span>
@@ -139,7 +140,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
                 className="pixel-btn p-1.5 bg-muted text-foreground hover:bg-blue-fantastic hover:text-palladian transition-colors"
                 title="edit"
               >
-                ✏️
+                <Pencil size={12} />
               </button>
               <button
                 onClick={() => handleDelete(tx.id)}

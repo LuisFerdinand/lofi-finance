@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { centsToDisplay } from "@/utils";
-import { getGoalEmoji, calcProgress, calcRemainingDays, calcRequiredPerDay } from "@/utils/goals-helpers"; // ← client-safe
+import { GoalIconDisplay, calcProgress, calcRemainingDays, calcRequiredPerDay } from "@/utils/goals-helpers"; // ← client-safe
 import type { SavingsGoal } from "@/db/schema/goals";
 import type { GoalIcon } from "@/types";
 import { Pin, PinOff, Trash2, ChevronRight, CheckCircle, XCircle } from "lucide-react";
@@ -75,7 +75,7 @@ export default function GoalCard({ goal, compact = false }: Props) {
           isCompleted ? "bg-burning-flame/10" : isOverdue ? "bg-truffle/10" : ""
         }`}>
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-xl shrink-0">{getGoalEmoji(goal.icon as GoalIcon)}</span>
+            <GoalIconDisplay icon={goal.icon as GoalIcon} size={22} className="shrink-0 text-abyssal" />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-pixel text-xs truncate leading-none">{goal.name}</p>

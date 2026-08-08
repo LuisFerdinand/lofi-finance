@@ -2,7 +2,8 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { centsToDisplay, getCategoryLabel, getCategoryEmoji } from "@/utils";
+import { centsToDisplay, getCategoryLabel } from "@/utils";
+import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { CategoryBreakdown } from "@/types";
 
 interface CategoryChartProps {
@@ -26,8 +27,8 @@ const CustomTooltip = ({ active, payload }: any) => {
   const item = payload[0].payload;
   return (
     <div className="pixel-box bg-card p-3 text-xs font-mono">
-      <p className="font-pixel mb-1" style={{ fontSize: "8px" }}>
-        {getCategoryEmoji(item.category)} {getCategoryLabel(item.category)}
+      <p className="font-pixel mb-1 flex items-center gap-1.5" style={{ fontSize: "8px" }}>
+        <CategoryIconDisplay category={item.category} size={11} /> {getCategoryLabel(item.category)}
       </p>
       <p className="text-muted-foreground">{centsToDisplay(item.total)}</p>
       <p className="text-muted-foreground">{item.percentage}%</p>
@@ -83,8 +84,8 @@ export default function CategoryChart({ data }: CategoryChartProps) {
                     className="w-3 h-3 border border-abyssal shrink-0"
                     style={{ background: COLORS[i % COLORS.length] }}
                   />
-                  <span className="text-sm shrink-0">
-                    {getCategoryEmoji(item.category)}
+                  <span className="shrink-0">
+                    <CategoryIconDisplay category={item.category} size={14} />
                   </span>
                   <span className="font-mono text-xs truncate">
                     {getCategoryLabel(item.category)}

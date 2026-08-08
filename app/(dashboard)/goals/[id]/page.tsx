@@ -1,9 +1,8 @@
 // app/(dashboard)/goals/[id]/page.tsx
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
-import { getGoalById, getGoalContributions, getGoalEmoji } from "@/utils/goals";
+import { getGoalById, getGoalContributions } from "@/utils/goals";
 import { centsToDisplay, formatDate } from "@/utils";
-import type { GoalIcon } from "@/types";
 import GoalCard from "@/components/goals/GoalCard";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
