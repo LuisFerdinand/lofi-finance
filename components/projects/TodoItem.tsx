@@ -15,7 +15,7 @@ const PRIORITY_STYLE: Record<string, string> = {
 };
 
 export default function TodoItem({ todo }: { todo: Todo }) {
-  const { patch, remove, busy } = useTodoActions(todo.id);
+  const { patch, remove, busy, confirmDialog } = useTodoActions(todo.id);
   const [editing, setEditing] = useState(false);
 
   const isDone = todo.status === "done";
@@ -70,6 +70,8 @@ export default function TodoItem({ todo }: { todo: Todo }) {
       >
         <Trash2 size={13} />
       </button>
+
+      {confirmDialog}
     </div>
   );
 }

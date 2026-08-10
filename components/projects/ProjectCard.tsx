@@ -1,15 +1,19 @@
 // components/projects/ProjectCard.tsx
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Pin, PinOff, Trash2, ChevronRight, Archive, ArchiveRestore, CheckCircle, XCircle } from "lucide-react";
 import { ProjectIconDisplay, calcTodoProgress } from "@/utils/projects-helpers";
 import type { ProjectWithProgress } from "@/utils/projects";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 export default function ProjectCard({ project }: { project: ProjectWithProgress }) {
   const router = useRouter();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const progress = calcTodoProgress(project.todoDone, project.todoTotal);
   const isArchived = project.status === "archived";
   const isCompleted = project.status === "completed";
@@ -28,13 +32,16 @@ export default function ProjectCard({ project }: { project: ProjectWithProgress 
   }
 
   async function handleDelete() {
-    if (!confirm(`delete project "${project.name}" and all its tasks?`)) return;
+    setDeleting(true);
     try {
       await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
       toast.success("project deleted");
       router.refresh();
     } catch {
       toast.error("failed to delete");
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
     }
   }
 
@@ -101,13 +108,22 @@ export default function ProjectCard({ project }: { project: ProjectWithProgress 
           {isArchived ? <ArchiveRestore size={12} /> : <Archive size={12} />}
         </button>
         <button
-          onClick={handleDelete}
+          onClick={() => setConfirmOpen(true)}
           title="delete project"
           className="pixel-btn p-2 bg-muted text-truffle hover:bg-truffle hover:text-palladian transition-colors ml-auto"
         >
           <Trash2 size={12} />
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="DELETE PROJECT"
+        message={`Delete "${project.name}" and all its tasks? This cannot be undone.`}
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

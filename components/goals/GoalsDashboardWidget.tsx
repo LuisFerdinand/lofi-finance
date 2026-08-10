@@ -21,7 +21,7 @@ export default async function GoalsDashboardWidget({ userId }: Props) {
     <div className="pixel-box bg-card overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h2 className="font-pixel text-xs">SAVINGS GOALS</h2>
-        <Link href="/goals" className="flex items-center gap-1 font-pixel text-xs text-burning-flame hover:underline" style={{ fontSize: "8px" }}>
+        <Link href="/goals" className="flex items-center gap-1 font-pixel text-xs text-burning-flame-ink hover:underline" style={{ fontSize: "8px" }}>
           ALL <ArrowRight size={10} />
         </Link>
       </div>
@@ -30,7 +30,7 @@ export default async function GoalsDashboardWidget({ userId }: Props) {
         <div className="p-6 text-center">
           <p className="text-2xl mb-2">🐷</p>
           <p className="font-mono text-xs text-muted-foreground">no active goals</p>
-          <Link href="/goals" className="inline-block mt-2 font-pixel text-xs text-burning-flame hover:underline" style={{ fontSize: "8px" }}>
+          <Link href="/goals" className="inline-block mt-2 font-pixel text-xs text-burning-flame-ink hover:underline" style={{ fontSize: "8px" }}>
             + CREATE GOAL
           </Link>
         </div>
@@ -55,7 +55,7 @@ export default async function GoalsDashboardWidget({ userId }: Props) {
                     {centsToDisplay(goal.currentAmount)} / {centsToDisplay(goal.targetAmount)}
                   </p>
                 </div>
-                <ArrowRight size={12} className="text-muted-foreground group-hover:text-burning-flame transition-colors shrink-0" />
+                <ArrowRight size={12} className="text-muted-foreground group-hover:text-burning-flame-ink transition-colors shrink-0" />
               </Link>
             );
           })}

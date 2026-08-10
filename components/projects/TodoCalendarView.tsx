@@ -128,7 +128,7 @@ export default function TodoCalendarView({ todos }: { todos: Todo[] }) {
 function DayPanel({ day, todos, onClose }: { day: Date; todos: Todo[]; onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4"
+      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[80dvh] overflow-y-auto">

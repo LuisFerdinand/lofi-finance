@@ -1,10 +1,10 @@
-// components/projects/useTodoActions.ts
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { Todo } from "@/db/schema/projects";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type TodoPatch = Partial<{
   title: string;
@@ -16,9 +16,12 @@ type TodoPatch = Partial<{
 
 // Shared PATCH/DELETE logic for a single todo — used by TodoItem, the Kanban
 // cards, and the Calendar day panel so they all hit /api/todos/[id] the same way.
+// `remove()` opens a confirm dialog rather than deleting immediately; render
+// the returned `confirmDialog` element somewhere in the caller's JSX tree.
 export function useTodoActions(todoId: string) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [pendingTitle, setPendingTitle] = useState<string | null>(null);
 
   async function patch(data: TodoPatch) {
     setBusy(true);
@@ -40,8 +43,11 @@ export function useTodoActions(todoId: string) {
     }
   }
 
-  async function remove(title: string) {
-    if (!confirm(`delete "${title}"?`)) return;
+  function remove(title: string) {
+    setPendingTitle(title);
+  }
+
+  async function confirmRemove() {
     setBusy(true);
     try {
       await fetch(`/api/todos/${todoId}`, { method: "DELETE" });
@@ -51,8 +57,20 @@ export function useTodoActions(todoId: string) {
       toast.error("failed to delete");
     } finally {
       setBusy(false);
+      setPendingTitle(null);
     }
   }
 
-  return { patch, remove, busy };
+  const confirmDialog = (
+    <ConfirmDialog
+      open={pendingTitle !== null}
+      title="DELETE TASK"
+      message={`Delete "${pendingTitle}"? This cannot be undone.`}
+      loading={busy}
+      onConfirm={confirmRemove}
+      onCancel={() => setPendingTitle(null)}
+    />
+  );
+
+  return { patch, remove, busy, confirmDialog };
 }

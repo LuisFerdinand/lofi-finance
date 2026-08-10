@@ -89,7 +89,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4"
+      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[90dvh] overflow-y-auto">
@@ -122,8 +122,8 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
             ) : balance ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Wallet size={14} className="text-burning-flame shrink-0" />
-                  <p className="font-pixel text-palladian" style={{ fontSize: "8px" }}>
+                  <Wallet size={14} className={balance.freeBalance > 0 ? "text-burning-flame shrink-0" : "text-truffle shrink-0"} />
+                  <p className={`font-pixel ${balance.freeBalance > 0 ? "text-palladian" : "text-abyssal"}`} style={{ fontSize: "8px" }}>
                     AVAILABLE BALANCE
                   </p>
                 </div>
@@ -198,14 +198,14 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
               <p className="font-pixel mb-2" style={{ fontSize: "7px" }}>QUICK FILL</p>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: "25% of remaining", val: Math.floor(remainingToGoal * 0.25) },
-                  { label: "50% of remaining", val: Math.floor(remainingToGoal * 0.5) },
-                  { label: "Complete goal",    val: remainingToGoal },
+                  { label: "25% of balance",   val: Math.floor(maxDeposit * 0.25) },
+                  { label: "50% of balance",   val: Math.floor(maxDeposit * 0.5) },
                   { label: "All balance",      val: maxDeposit },
+                  { label: "Complete goal",    val: remainingToGoal },
                 ]
                   .filter(({ val }) => val > 0)
                   .map(({ label, val }) => {
-                    // Cap each preset at the available balance
+                    // Complete goal can exceed what's actually in the wallet — cap it there too
                     const capped = Math.min(val, maxDeposit);
                     return (
                       <button
@@ -270,7 +270,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
             {exceedsBalance && (
               <div className="mt-2 flex items-center gap-2 pixel-box-sm bg-truffle/20 p-2">
                 <AlertTriangle size={12} className="text-truffle shrink-0" />
-                <p className="font-mono text-xs text-truffle">
+                <p className="font-mono text-xs text-abyssal">
                   exceeds available balance ({centsToDisplay(balance!.freeBalance)})
                 </p>
               </div>
@@ -292,6 +292,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
               type="date"
               required
               value={date}
+              max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setDate(e.target.value)}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
             />

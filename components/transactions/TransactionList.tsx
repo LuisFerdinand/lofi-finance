@@ -9,6 +9,7 @@ import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { Transaction } from "@/db/schema";
 import { Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import EditTransactionModal from "./EditTransactionModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -21,14 +22,21 @@ export default function TransactionList({ transactions, total, page, totalPages 
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const [optimisticTxns, removeOptimistic] = useOptimistic(
     transactions,
     (current, deletedId: string) => current.filter((t) => t.id !== deletedId)
   );
 
-  async function handleDelete(id: string) {
-    if (!confirm("delete this transaction?")) return;
+  function handleDelete(id: string) {
+    setConfirmId(id);
+  }
+
+  function confirmDelete() {
+    const id = confirmId;
+    if (!id) return;
+    setConfirmId(null);
     startTransition(async () => {
       removeOptimistic(id);
       try {
@@ -117,7 +125,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
             }`}>
               <span
                 className={`font-pixel leading-none ${
-                  tx.type === "income" ? "text-burning-flame" : "text-truffle"
+                  tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
                 style={{ fontSize: "11px" }}
               >
@@ -125,7 +133,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
               </span>
               <span
                 className={`font-pixel break-all ${
-                  tx.type === "income" ? "text-burning-flame" : "text-truffle"
+                  tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
                 style={{ fontSize: "11px" }}
               >
@@ -178,6 +186,14 @@ export default function TransactionList({ transactions, total, page, totalPages 
           onSuccess={() => { setEditing(null); router.refresh(); }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="DELETE TRANSACTION"
+        message="Delete this transaction? This cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmId(null)}
+      />
     </>
   );
 }

@@ -119,6 +119,7 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess }
               type="date"
               required
               value={form.transactionDate}
+              max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setForm({ ...form, transactionDate: e.target.value })}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
             />

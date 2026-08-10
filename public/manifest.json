@@ -1,0 +1,22 @@
+{
+  "name": "LoFi Finance",
+  "short_name": "LoFi Finance",
+  "description": "Track your income and expenses with a cozy lofi aesthetic",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#1b2632",
+  "theme_color": "#1b2632",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

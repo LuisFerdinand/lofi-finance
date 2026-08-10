@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { formatDate, getInitials } from "@/utils";
 import type { User } from "@/db/schema";
 import { Shield, ShieldOff, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface Props {
   users: User[];
@@ -15,6 +16,7 @@ interface Props {
 export default function AdminUserTable({ users, currentUserId }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   async function handleToggleActive(id: string) {
     setLoading(id + "-active");
@@ -48,8 +50,9 @@ export default function AdminUserTable({ users, currentUserId }: Props) {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`delete user "${name}"? this also deletes all their transactions.`)) return;
+  async function handleDelete() {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
     setLoading(id + "-delete");
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
@@ -60,6 +63,7 @@ export default function AdminUserTable({ users, currentUserId }: Props) {
       toast.error("failed to delete user");
     } finally {
       setLoading(null);
+      setPendingDelete(null);
     }
   }
 
@@ -140,7 +144,7 @@ export default function AdminUserTable({ users, currentUserId }: Props) {
                 {user.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
               </button>
               <button
-                onClick={() => handleDelete(user.id, user.name)}
+                onClick={() => setPendingDelete({ id: user.id, name: user.name })}
                 disabled={isSelf || loading === user.id + "-delete"}
                 title="delete user"
                 className="pixel-btn p-1.5 bg-muted text-truffle hover:bg-truffle hover:text-palladian disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -151,6 +155,15 @@ export default function AdminUserTable({ users, currentUserId }: Props) {
           </div>
         );
       })}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="DELETE USER"
+        message={pendingDelete ? `Delete "${pendingDelete.name}"? This also deletes all their transactions — this cannot be undone.` : ""}
+        loading={pendingDelete ? loading === pendingDelete.id + "-delete" : false}
+        onConfirm={handleDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

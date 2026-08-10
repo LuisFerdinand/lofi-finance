@@ -2,8 +2,10 @@
 
 import { signOut } from "next-auth/react";
 import { getInitials } from "@/utils";
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useState } from "react";
+import Tooltip from "@/components/ui/Tooltip";
+import { useSidebar } from "./SidebarContext";
 
 interface TopBarProps {
   user: { name?: string | null; email?: string | null; role: string };
@@ -11,11 +13,23 @@ interface TopBarProps {
 
 export default function TopBar({ user }: TopBarProps) {
   const [open, setOpen] = useState(false);
+  const { collapsed, toggleCollapsed } = useSidebar();
 
   return (
     <header className="bg-card border-b-2 border-border px-4 md:px-6 py-3 flex items-center justify-between">
-      {/* Page title placeholder - filled by each page via context if needed */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {/* Sidebar collapse toggle — desktop only, sidebar itself is hidden on mobile */}
+        <Tooltip label={collapsed ? "expand sidebar" : "collapse sidebar"} position="bottom">
+          <button
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
+            className="hidden md:flex pixel-btn bg-background p-2 hover:bg-blue-fantastic hover:text-palladian transition-colors"
+          >
+            {collapsed ? <ChevronsRight size={12} /> : <ChevronsLeft size={12} />}
+          </button>
+        </Tooltip>
+
+        {/* Page title placeholder - filled by each page via context if needed */}
         <span className="font-pixel text-xs text-muted-foreground hidden sm:block">
           LoFi Finance
         </span>

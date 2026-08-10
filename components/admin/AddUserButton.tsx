@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserPlus, X } from "lucide-react";
+import FabButton from "@/components/ui/FabButton";
 
 export default function AddUserButton() {
   const [open, setOpen] = useState(false);
@@ -11,12 +12,13 @@ export default function AddUserButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 flex items-center gap-2 shrink-0"
+        className="hidden md:flex pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 items-center gap-2 shrink-0"
         style={{ fontSize: "9px" }}
       >
         <UserPlus size={12} />
         ADD USER
       </button>
+      <FabButton icon={UserPlus} label="add user" onClick={() => setOpen(true)} />
       {open && <AddUserModal onClose={() => setOpen(false)} />}
     </>
   );
@@ -58,7 +60,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4">
+    <div className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0">
       <div className="pixel-box bg-card w-full max-w-md animate-slide-up">
         <div className="bg-abyssal text-palladian px-4 py-3 flex items-center justify-between">
           <span className="font-pixel text-xs">CREATE USER</span>

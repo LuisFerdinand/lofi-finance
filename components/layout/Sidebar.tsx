@@ -1,7 +1,7 @@
 // components/layout/Sidebar.tsx
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils";
@@ -11,11 +11,10 @@ import {
   Users,
   PiggyBank,
   ListTodo,
-  ChevronsLeft,
-  ChevronsRight,
 } from "lucide-react";
 import LogoMark from "./LogoMark";
 import Tooltip from "@/components/ui/Tooltip";
+import { useSidebar } from "./SidebarContext";
 import { APP_VERSION } from "@/lib/version";
 
 const navGroups = [
@@ -46,33 +45,20 @@ const navGroups = [
   },
 ];
 
-const COLLAPSE_KEY = "lofi:sidebarCollapsed";
-
 export default function Sidebar({ role }: { role: "admin" | "user" }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
-  }, []);
-
-  function toggleCollapsed() {
-    setCollapsed((c) => {
-      const next = !c;
-      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
-      return next;
-    });
-  }
+  const { collapsed } = useSidebar();
 
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col bg-abyssal text-palladian border-r-2 border-abyssal shrink-0 transition-all duration-200",
+        "hidden md:flex flex-col bg-abyssal text-palladian border-r-2 border-abyssal shrink-0",
+        "h-full transition-[width] duration-200",
         collapsed ? "w-16" : "w-56"
       )}
     >
       {/* Logo */}
-      <div className={cn("p-5 border-b-2 border-blue-fantastic", collapsed && "px-3")}>
+      <div className={cn("p-5 border-b-2 border-blue-fantastic shrink-0", collapsed && "px-3")}>
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
           <div
             className="pixel-box-sm bg-burning-flame flex items-center justify-center shrink-0"
@@ -90,7 +76,7 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
       </div>
 
       {/* Nav — grouped sections */}
-      <nav className={cn("flex-1 p-4 space-y-4 overflow-y-auto", collapsed && "px-2")}>
+      <nav className={cn("flex-1 min-h-0 p-4 space-y-4 overflow-y-auto", collapsed && "px-2")}>
         {navGroups.map((group) => {
           const items = group.items.filter((item) => item.role.includes(role));
           if (items.length === 0) return null;
@@ -129,25 +115,11 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
         })}
       </nav>
 
-      {/* Collapse toggle + version */}
-      <div className={cn("p-4 border-t-2 border-blue-fantastic", collapsed && "px-2")}>
-        <button
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
-          className={cn(
-            "w-full flex items-center justify-center gap-2 pixel-btn bg-blue-fantastic text-palladian py-2 hover:bg-burning-flame hover:text-abyssal transition-colors mb-3"
-          )}
-        >
-          {collapsed ? (
-            <ChevronsRight size={12} />
-          ) : (
-            <>
-              <ChevronsLeft size={12} />
-              <span className="font-pixel" style={{ fontSize: "8px" }}>COLLAPSE</span>
-            </>
-          )}
-        </button>
-        {!collapsed && (
+      {/* Version footer */}
+      <div className={cn("p-4 border-t-2 border-blue-fantastic shrink-0", collapsed && "px-2 text-center")}>
+        {collapsed ? (
+          <p className="font-pixel text-blue-fantastic" style={{ fontSize: "7px" }}>v{APP_VERSION}</p>
+        ) : (
           <>
             <p className="font-pixel text-xs text-blue-fantastic">v{APP_VERSION}</p>
             <p className="font-mono text-xs text-blue-fantastic mt-1">lofi finance</p>

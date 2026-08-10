@@ -70,7 +70,7 @@ export default async function GoalDetailPage({ params }: PageProps) {
                 )}
               </div>
               <p className="font-mono text-xs text-muted-foreground whitespace-nowrap shrink-0">{formatDate(c.contributedAt)}</p>
-              <p className={`font-pixel shrink-0 ${c.amount > 0 ? "text-burning-flame" : "text-truffle"}`} style={{ fontSize: "10px" }}>
+              <p className={`font-pixel shrink-0 ${c.amount > 0 ? "text-burning-flame-ink" : "text-truffle"}`} style={{ fontSize: "10px" }}>
                 {c.amount > 0 ? "+" : "−"}{centsToDisplay(Math.abs(c.amount))}
               </p>
             </div>

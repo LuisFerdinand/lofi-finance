@@ -9,6 +9,11 @@
   --oatmeal: #c9c1b1;
   --blue-fantastic: #2c3b4d;
   --burning-flame: #ffb162;
+  /* Darkened burning-flame for body/amount text on light surfaces — the raw
+     accent fails WCAG contrast (~1.6:1) on --card/--background; this variant
+     keeps the same warm hue at ~4.8:1 against --card. Use text-burning-flame
+     on dark surfaces (abyssal/blue-fantastic), text-burning-flame-ink on light ones. */
+  --burning-flame-ink: #9a5b12;
   --truffle: #a35139;
   --abyssal: #1b2632;
 
@@ -49,6 +54,9 @@
 .dark {
   --background: var(--abyssal);
   --foreground: var(--palladian);
+  /* Surfaces are dark here, so the ink variant would be unreadable — fall
+     back to the bright accent, same as its normal dark-surface use. */
+  --burning-flame-ink: var(--burning-flame);
   --card: var(--blue-fantastic);
   --card-foreground: var(--palladian);
   --popover: var(--blue-fantastic);
@@ -93,6 +101,7 @@
   --color-oatmeal: #c9c1b1;
   --color-blue-fantastic: #2c3b4d;
   --color-burning-flame: #ffb162;
+  --color-burning-flame-ink: var(--burning-flame-ink);
   --color-truffle: #a35139;
   --color-abyssal: #1b2632;
 
@@ -188,6 +197,25 @@ body::before {
 /* ─── Typography ─────────────────────────────────────────────────────── */
 .font-pixel {
   font-family: var(--font-pixel);
+}
+
+/* Mobile type bump — most of the app sizes pixel-font labels/values with
+   one-off `style={{ fontSize: "Npx" }}` (6-12px), tuned for desktop density.
+   On phones that reads too small. Rather than touch the ~120 call sites,
+   scale each tier up via attribute selectors (inline styles otherwise beat
+   any stylesheet rule, so this needs !important to win). */
+@media (max-width: 767px) {
+  /* Matched with and without the space after the colon — the space is
+     present in JSX source but browsers serialize the live style attribute
+     without it (e.g. "font-size:9px"), and that serialized form is what
+     attribute selectors actually match against. */
+  [style*="font-size: 6px"], [style*="font-size:6px"] { font-size: 8px !important; }
+  [style*="font-size: 7px"], [style*="font-size:7px"] { font-size: 9px !important; }
+  [style*="font-size: 8px"], [style*="font-size:8px"] { font-size: 10px !important; }
+  [style*="font-size: 9px"], [style*="font-size:9px"] { font-size: 11px !important; }
+  [style*="font-size: 10px"], [style*="font-size:10px"] { font-size: 12px !important; }
+  [style*="font-size: 11px"], [style*="font-size:11px"] { font-size: 13px !important; }
+  [style*="font-size: 12px"], [style*="font-size:12px"] { font-size: 14px !important; }
 }
 
 h1, h2, h3 {

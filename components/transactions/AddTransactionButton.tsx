@@ -9,6 +9,7 @@ import { getCategoriesByType, getCategoryLabel } from "@/utils";
 import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { TransactionType } from "@/types";
 import RupiahInput from "@/components/ui/RupiahInput";
+import FabButton from "@/components/ui/FabButton";
 
 const LAST_TXN_KEY = "lofi:lastTxn";
 
@@ -37,11 +38,12 @@ export default function AddTransactionButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 flex items-center gap-2 shrink-0"
+        className="hidden md:flex pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 items-center gap-2 shrink-0"
         style={{ fontSize: "9px" }}
       >
         <Plus size={12} /> ADD
       </button>
+      <FabButton icon={Plus} label="add transaction" onClick={() => setOpen(true)} />
 
       {open && <AddModal onClose={() => setOpen(false)} />}
     </>
@@ -201,6 +203,7 @@ function AddModal({ onClose }: { onClose: () => void }) {
               type="date"
               required
               value={form.transactionDate}
+              max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setForm({ ...form, transactionDate: e.target.value })}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
             />

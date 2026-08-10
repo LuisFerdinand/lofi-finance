@@ -10,6 +10,7 @@ import type { SavingsGoal } from "@/db/schema/goals";
 import type { GoalIcon } from "@/types";
 import { Pin, PinOff, Trash2, ChevronRight, CheckCircle, XCircle } from "lucide-react";
 import ContributeModal from "./ContributeModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Link from "next/link";
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
 export default function GoalCard({ goal, compact = false }: Props) {
   const router = useRouter();
   const [contributeOpen, setContributeOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const progress = calcProgress(goal.currentAmount, goal.targetAmount);
   const remaining = goal.targetAmount - goal.currentAmount;
@@ -42,12 +45,17 @@ export default function GoalCard({ goal, compact = false }: Props) {
   }
 
   async function handleDelete() {
-    if (!confirm(`delete goal "${goal.name}"?`)) return;
+    setDeleting(true);
     try {
       await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
       toast.success("goal deleted");
       router.refresh();
-    } catch { toast.error("failed to delete"); }
+    } catch {
+      toast.error("failed to delete");
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
+    }
   }
 
   async function handleMarkComplete() {
@@ -103,7 +111,7 @@ export default function GoalCard({ goal, compact = false }: Props) {
         <div className="px-4 py-3">
           <div className="flex items-end justify-between mb-2">
             <div>
-              <p className="font-pixel text-burning-flame" style={{ fontSize: "11px" }}>{centsToDisplay(goal.currentAmount)}</p>
+              <p className="font-pixel text-burning-flame-ink" style={{ fontSize: "11px" }}>{centsToDisplay(goal.currentAmount)}</p>
               <p className="font-mono text-xs text-muted-foreground">of {centsToDisplay(goal.targetAmount)}</p>
             </div>
             <p className="font-pixel text-foreground" style={{ fontSize: "11px" }}>{progress}%</p>
@@ -145,7 +153,7 @@ export default function GoalCard({ goal, compact = false }: Props) {
             <button onClick={handleMarkComplete} title={isCompleted ? "reopen" : "mark complete"} className="pixel-btn p-2 bg-muted hover:bg-burning-flame hover:text-abyssal transition-colors">
               {isCompleted ? <XCircle size={12} /> : <CheckCircle size={12} />}
             </button>
-            <button onClick={handleDelete} title="delete goal" className="pixel-btn p-2 bg-muted text-truffle hover:bg-truffle hover:text-palladian transition-colors">
+            <button onClick={() => setConfirmOpen(true)} title="delete goal" className="pixel-btn p-2 bg-muted text-truffle hover:bg-truffle hover:text-palladian transition-colors">
               <Trash2 size={12} />
             </button>
           </div>
@@ -167,6 +175,15 @@ export default function GoalCard({ goal, compact = false }: Props) {
           onSuccess={() => { setContributeOpen(false); router.refresh(); }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="DELETE GOAL"
+        message={`Delete "${goal.name}"? This removes the goal and its contribution history — this cannot be undone.`}
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </>
   );
 }

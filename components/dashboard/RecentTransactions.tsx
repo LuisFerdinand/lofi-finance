@@ -17,7 +17,7 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
         <h2 className="font-pixel text-xs">RECENT ACTIVITY</h2>
         <Link
           href="/transactions"
-          className="flex items-center gap-1 font-pixel text-xs text-burning-flame hover:underline"
+          className="flex items-center gap-1 font-pixel text-xs text-burning-flame-ink hover:underline"
           style={{ fontSize: "8px" }}
         >
           VIEW ALL <ArrowRight size={10} />
@@ -51,7 +51,7 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
               {/* Amount */}
               <p
                 className={`font-pixel text-xs shrink-0 ${
-                  tx.type === "income" ? "text-burning-flame" : "text-truffle"
+                  tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
                 style={{ fontSize: "10px" }}
               >
