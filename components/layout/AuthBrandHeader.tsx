@@ -14,7 +14,7 @@ export default function AuthBrandHeader() {
         LoFi<br />Finance
       </h1>
       <p className="text-muted-foreground text-xs mt-2 font-mono">
-        your cozy money tracker
+        your cozy money &amp; work tracker
       </p>
     </div>
   );

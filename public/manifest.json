@@ -1,7 +1,7 @@
 {
   "name": "LoFi Finance",
   "short_name": "LoFi Finance",
-  "description": "Track your income and expenses with a cozy lofi aesthetic",
+  "description": "A cozy lofi workspace for your money and your work: dashboard, transactions, savings goals, tasks, and projects.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#1b2632",

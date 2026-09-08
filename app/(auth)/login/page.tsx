@@ -5,16 +5,17 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { LayoutDashboard, ArrowLeftRight, PiggyBank, ListTodo } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, ListChecks, ListTodo } from "lucide-react";
 import LogoMark from "@/components/layout/LogoMark";
 import AuthBrandHeader from "@/components/layout/AuthBrandHeader";
 import { APP_VERSION } from "@/lib/version";
 
 const FEATURES = [
-  { icon: LayoutDashboard, title: "Live Dashboard", desc: "See income, expenses, and trends at a glance." },
+  { icon: LayoutDashboard, title: "Live Dashboard", desc: "Income, expenses, savings, and trends at a glance." },
   { icon: ArrowLeftRight, title: "Transactions", desc: "Log income and expenses in seconds from your phone." },
-  { icon: PiggyBank, title: "Savings Goals", desc: "Set targets and track your progress toward them." },
-  { icon: ListTodo, title: "Projects & Todos", desc: "Organize tasks with list, kanban, and calendar views." },
+  { icon: PiggyBank, title: "Savings Goals", desc: "Set targets and watch your progress grow." },
+  { icon: ListChecks, title: "Tasks", desc: "Stay on top of to-dos with daily email reminders." },
+  { icon: ListTodo, title: "Projects", desc: "Plan work with list, kanban, and calendar views." },
 ];
 
 export default function LoginPage() {
@@ -59,10 +60,10 @@ export default function LoginPage() {
           <h1 className="font-pixel text-sm leading-loose text-palladian">
             LoFi<br />Finance
           </h1>
-          <p className="font-mono text-xs text-oatmeal mt-2">your cozy money tracker</p>
+          <p className="font-mono text-xs text-oatmeal mt-2">your cozy money &amp; work tracker</p>
         </div>
 
-        <div className="space-y-5 my-8">
+        <div className="space-y-4 my-8">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex items-start gap-3">
               <div

@@ -4,10 +4,44 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 
+const APP_NAME = "LoFi Finance";
+const APP_DESCRIPTION =
+  "A cozy lofi-styled workspace for your money and your work: track income, expenses, and trends on a live dashboard, log transactions in seconds, set and grow savings goals, and plan tasks and projects with list, kanban, and calendar views.";
+
 export const metadata: Metadata = {
-  title: "LoFi Finance | Personal Finance Tracker",
-  description: "Track your income and expenses with a cozy lofi aesthetic",
+  title: {
+    default: `${APP_NAME} | Personal Finance & Productivity Tracker`,
+    template: `%s | ${APP_NAME}`,
+  },
+  description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  keywords: [
+    "personal finance",
+    "budget tracker",
+    "expense tracker",
+    "income tracker",
+    "savings goals",
+    "dashboard",
+    "transactions",
+    "task manager",
+    "project management",
+    "kanban",
+    "calendar",
+    "todo",
+    "lofi",
+  ],
   manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    title: `${APP_NAME} | Personal Finance & Productivity Tracker`,
+    description: APP_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: `${APP_NAME} | Personal Finance & Productivity Tracker`,
+    description: APP_DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
