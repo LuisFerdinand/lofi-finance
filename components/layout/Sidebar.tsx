@@ -11,6 +11,7 @@ import {
   Users,
   PiggyBank,
   ListTodo,
+  ListChecks,
 } from "lucide-react";
 import LogoMark from "./LogoMark";
 import Tooltip from "@/components/ui/Tooltip";
@@ -34,6 +35,7 @@ const navGroups = [
   {
     label: "WORK",
     items: [
+      { href: "/tasks", label: "TASKS", icon: ListChecks, role: ["admin", "user"] },
       { href: "/projects", label: "PROJECTS", icon: ListTodo, role: ["admin", "user"] },
     ],
   },

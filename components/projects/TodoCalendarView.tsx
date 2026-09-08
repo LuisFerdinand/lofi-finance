@@ -14,11 +14,11 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, X, ListChecks } from "lucide-react";
 import type { Todo } from "@/db/schema/projects";
-import { STATUS_STYLE, STATUS_LABELS } from "@/utils/projects-helpers";
+import { STATUS_STYLE, STATUS_LABELS, todoProgress } from "@/utils/projects-helpers";
 import { useTodoActions } from "./useTodoActions";
-import TodoEditForm from "./TodoEditForm";
+import TodoDetailModal from "./TodoDetailModal";
 
 export default function TodoCalendarView({ todos }: { todos: Todo[] }) {
   const [cursor, setCursor] = useState(() => new Date());
@@ -152,29 +152,46 @@ function DayPanelItem({ todo }: { todo: Todo }) {
   const { patch, busy } = useTodoActions(todo.id);
   const [editing, setEditing] = useState(false);
   const isDone = todo.status === "done";
-
-  if (editing) {
-    return <TodoEditForm todo={todo} onDone={() => setEditing(false)} />;
-  }
+  const checklist = todo.checklist ?? [];
+  const progress = todoProgress(todo);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0">
-      <button
-        onClick={() => patch({ status: isDone ? "open" : "done" })}
-        disabled={busy}
-        aria-label={isDone ? "mark as open" : "mark as done"}
-        className={`shrink-0 w-6 h-6 pixel-box-sm flex items-center justify-center transition-colors ${
-          isDone ? "bg-burning-flame text-abyssal" : "bg-background hover:bg-muted"
-        }`}
-      >
-        {isDone && <Check size={13} strokeWidth={3} />}
-      </button>
-      <button type="button" onClick={() => setEditing(true)} className="flex-1 min-w-0 text-left">
-        <p className={`font-mono text-sm truncate ${isDone ? "line-through text-muted-foreground" : ""}`}>{todo.title}</p>
-        <span className={`pixel-tag border-abyssal ${STATUS_STYLE[todo.status]}`} style={{ fontSize: "6px" }}>
-          {STATUS_LABELS[todo.status]}
-        </span>
-      </button>
-    </div>
+    <>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0">
+        <button
+          onClick={() => patch({ status: isDone ? "open" : "done" })}
+          disabled={busy}
+          aria-label={isDone ? "mark as open" : "mark as done"}
+          className={`shrink-0 w-6 h-6 pixel-box-sm flex items-center justify-center transition-colors ${
+            isDone ? "bg-burning-flame text-abyssal" : "bg-background hover:bg-muted"
+          }`}
+        >
+          {isDone && <Check size={13} strokeWidth={3} />}
+        </button>
+        <button type="button" onClick={() => setEditing(true)} className="flex-1 min-w-0 text-left">
+          <p className={`font-mono text-sm truncate ${isDone ? "line-through text-muted-foreground" : ""}`}>{todo.title}</p>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className={`pixel-tag border-abyssal ${STATUS_STYLE[todo.status]}`} style={{ fontSize: "6px" }}>
+              {STATUS_LABELS[todo.status]}
+            </span>
+            {checklist.length > 0 && (
+              <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                <ListChecks size={9} /> {checklist.filter((c) => c.done).length}/{checklist.length}
+              </span>
+            )}
+          </div>
+          {checklist.length > 0 && (
+            <div className="h-1 bg-muted border border-border overflow-hidden mt-1.5 max-w-[200px]">
+              <div
+                className={`h-full ${progress >= 100 ? "bg-burning-flame" : "bg-blue-fantastic"}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
+        </button>
+      </div>
+
+      {editing && <TodoDetailModal todo={todo} onClose={() => setEditing(false)} />}
+    </>
   );
 }

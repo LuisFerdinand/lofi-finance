@@ -1,7 +1,7 @@
 // src/utils/index.ts
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfWeek, subWeeks, parseISO } from "date-fns";
 import type { Category, TransactionType } from "@/types";
 
 // ─── Tailwind Utility ───────────────────────────────────────────────────────
@@ -67,6 +67,21 @@ export function getLast6Months(): { month: number; year: number; label: string }
     });
   }
   return months;
+}
+
+/**
+ * Last 8 weeks (oldest first), each keyed by the ISO date of its Monday start —
+ * `start` matches `to_char(date_trunc('week', ...), 'YYYY-MM-DD')` in Postgres,
+ * which also uses Monday as the week start.
+ */
+export function getLast8Weeks(): { start: string; label: string }[] {
+  const weeks = [];
+  const now = new Date();
+  for (let i = 7; i >= 0; i--) {
+    const d = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+    weeks.push({ start: format(d, "yyyy-MM-dd"), label: format(d, "d MMM") });
+  }
+  return weeks;
 }
 
 // ─── Category ───────────────────────────────────────────────────────────────

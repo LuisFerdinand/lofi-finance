@@ -26,7 +26,7 @@ export default function StatsGrid({ stats }: StatsGridProps) {
       border: "border-abyssal",
     },
     {
-      label: "NET BALANCE",
+      label: "NET · MONTH",
       value: centsToDisplay(stats.netBalance),
       icon: Wallet,
       bg: stats.netBalance >= 0 ? "bg-blue-fantastic" : "bg-abyssal",

@@ -56,8 +56,8 @@ export default function TodoList({ projectId, todos }: { projectId: string; todo
       }
       setQuickTitle("");
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to add task");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to add task");
     } finally {
       setAdding(false);
     }

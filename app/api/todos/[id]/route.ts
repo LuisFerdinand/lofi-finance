@@ -6,7 +6,19 @@ import { z } from "zod";
 
 const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  notes: z.string().max(500).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  imageUrl: z.string().url().max(500).nullable().optional(),
+  link: z.string().url().max(500).nullable().optional(),
+  checklist: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(64),
+        text: z.string().min(1).max(200),
+        done: z.boolean(),
+      })
+    )
+    .max(50)
+    .optional(),
   status: z.enum(["open", "in_progress", "on_hold", "done", "cancelled"]).optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),

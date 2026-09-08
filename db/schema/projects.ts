@@ -1,4 +1,5 @@
 // db/schema/projects.ts
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -7,8 +8,12 @@ import {
   date,
   pgEnum,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
+
+/** One row of a todo's checklist — stored as a JSONB array on the todo itself. */
+export type ChecklistItem = { id: string; text: string; done: boolean };
 
 export const projectStatusEnum = pgEnum("project_status", [
   "active",
@@ -56,6 +61,13 @@ export const todos = pgTable("todos", {
     .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   notes: text("notes"),
+  // Optional working context attached to a task.
+  imageUrl: text("image_url"),
+  link: text("link"),
+  checklist: jsonb("checklist")
+    .$type<ChecklistItem[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   status: todoStatusEnum("status").notNull().default("open"),
   priority: todoPriorityEnum("priority").notNull().default("medium"),
   dueDate: date("due_date"),

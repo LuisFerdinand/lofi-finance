@@ -64,7 +64,7 @@ export default async function GoalsPage() {
           <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
             ▶ ACTIVE ({active.length})
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {active.map((goal) => (
               <GoalCard key={goal.id} goal={goal} />
             ))}
@@ -78,7 +78,7 @@ export default async function GoalsPage() {
           <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
             ✓ COMPLETED ({completed.length})
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {completed.map((goal) => (
               <GoalCard key={goal.id} goal={goal} />
             ))}
@@ -92,7 +92,7 @@ export default async function GoalsPage() {
           <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
             ✕ CANCELLED ({cancelled.length})
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {cancelled.map((goal) => (
               <GoalCard key={goal.id} goal={goal} />
             ))}

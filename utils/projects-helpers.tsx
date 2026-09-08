@@ -1,6 +1,7 @@
 // utils/projects-helpers.tsx
 // ⚠️  NO server imports here — this file is safe to import in client components
 
+import type { ChecklistItem } from "@/db/schema/projects";
 import {
   Folder,
   Briefcase,
@@ -62,6 +63,24 @@ export function ProjectIconDisplay({
 export function calcTodoProgress(done: number, total: number): number {
   if (total <= 0) return 0;
   return Math.min(Math.round((done / total) * 100), 100);
+}
+
+export type { ChecklistItem };
+
+/**
+ * A single task's completion %. Driven by its checklist when it has one,
+ * otherwise it's simply 0 or 100 based on the task's own status.
+ */
+export function todoProgress(todo: {
+  status: string;
+  checklist?: ChecklistItem[] | null;
+}): number {
+  const items = todo.checklist ?? [];
+  if (items.length > 0) {
+    const done = items.filter((i) => i.done).length;
+    return calcTodoProgress(done, items.length);
+  }
+  return todo.status === "done" ? 100 : 0;
 }
 
 export const STATUS_ORDER = ["open", "in_progress", "on_hold", "done", "cancelled"] as const;

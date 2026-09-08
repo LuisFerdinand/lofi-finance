@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { transactions, users } from "@/db/schema";
+import { transactions } from "@/db/schema";
 import { eq, and, gte, lte, desc, count, sql, like, or } from "drizzle-orm";
 import { getMonthRange } from "@/utils";
 import type {
@@ -113,6 +113,76 @@ export async function getMonthlyStats(
     netBalance: totalIncome - totalExpense,
     transactionCount,
   };
+}
+
+// ─── All-time balance overview ───────────────────────────────────────────────
+
+/**
+ * All-time totals across every transaction — the "real" balance, as opposed to
+ * getMonthlyStats() which is scoped to a single month.
+ */
+export async function getBalanceOverview(userId: string): Promise<{
+  totalBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+}> {
+  const rows = await db
+    .select({
+      type: transactions.type,
+      total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
+    })
+    .from(transactions)
+    .where(eq(transactions.userId, userId))
+    .groupBy(transactions.type);
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+  for (const row of rows) {
+    if (row.type === "income") totalIncome = Number(row.total);
+    else totalExpense = Number(row.total);
+  }
+
+  return { totalBalance: totalIncome - totalExpense, totalIncome, totalExpense };
+}
+
+// ─── Cumulative balance trend ────────────────────────────────────────────────
+
+/**
+ * Closing balance at the end of each of the last 6 months (running total of
+ * every transaction up to and including that month). Used to draw the balance
+ * line on the dashboard so you can see the trajectory, not just monthly slices.
+ */
+export async function getBalanceTrend(
+  userId: string
+): Promise<{ month: string; balance: number }[]> {
+  const ym = sql<string>`to_char(${transactions.transactionDate}, 'YYYY-MM')`;
+
+  const rows = await db
+    .select({
+      ym,
+      delta: sql<number>`sum(case when ${transactions.type} = 'income' then ${transactions.amount} else -${transactions.amount} end)`,
+    })
+    .from(transactions)
+    .where(eq(transactions.userId, userId))
+    .groupBy(ym)
+    .orderBy(ym);
+
+  const months = getLast6Months();
+  const result: { month: string; balance: number }[] = [];
+  let idx = 0;
+  let running = 0;
+
+  for (const m of months) {
+    const key = `${m.year}-${String(m.month).padStart(2, "0")}`;
+    // Fold in every month at or before this one (includes history before the window).
+    while (idx < rows.length && rows[idx].ym <= key) {
+      running += Number(rows[idx].delta);
+      idx++;
+    }
+    result.push({ month: m.label, balance: running });
+  }
+
+  return result;
 }
 
 // ─── Category breakdown ───────────────────────────────────────────────────────

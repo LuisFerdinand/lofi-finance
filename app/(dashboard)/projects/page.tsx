@@ -43,7 +43,7 @@ export default async function ProjectsPage() {
           <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
             ▶ ACTIVE ({active.length})
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {active.map((p) => (
               <ProjectCard key={p.id} project={p} />
             ))}
@@ -57,7 +57,7 @@ export default async function ProjectsPage() {
           <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
             ✓ COMPLETED ({completed.length})
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {completed.map((p) => (
               <ProjectCard key={p.id} project={p} />
             ))}
@@ -71,7 +71,7 @@ export default async function ProjectsPage() {
           <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
             ARCHIVED ({archived.length})
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {archived.map((p) => (
               <ProjectCard key={p.id} project={p} />
             ))}

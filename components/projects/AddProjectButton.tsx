@@ -48,8 +48,8 @@ function AddProjectModal({ onClose }: { onClose: () => void }) {
       toast.success("project created!");
       router.refresh();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to create project");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to create project");
     } finally {
       setLoading(false);
     }

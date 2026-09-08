@@ -6,19 +6,26 @@ import { toast } from "sonner";
 import type { Todo } from "@/db/schema/projects";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
+import type { ChecklistItem } from "@/db/schema/projects";
+
 type TodoPatch = Partial<{
   title: string;
   notes: string | null;
+  imageUrl: string | null;
+  link: string | null;
+  checklist: ChecklistItem[];
   status: Todo["status"];
   priority: Todo["priority"];
   dueDate: string | null;
 }>;
 
 // Shared PATCH/DELETE logic for a single todo — used by TodoItem, the Kanban
-// cards, and the Calendar day panel so they all hit /api/todos/[id] the same way.
-// `remove()` opens a confirm dialog rather than deleting immediately; render
-// the returned `confirmDialog` element somewhere in the caller's JSX tree.
-export function useTodoActions(todoId: string) {
+// cards, the Calendar day panel, and the task detail modal so they all hit
+// /api/todos/[id] the same way. `remove()` opens a confirm dialog rather than
+// deleting immediately; render the returned `confirmDialog` element somewhere in
+// the caller's JSX tree. Pass `onDeleted` to run after a successful delete
+// (e.g. to close a modal).
+export function useTodoActions(todoId: string, onDeleted?: () => void) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [pendingTitle, setPendingTitle] = useState<string | null>(null);
@@ -36,8 +43,8 @@ export function useTodoActions(todoId: string) {
         throw new Error(d.error);
       }
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to update");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to update");
     } finally {
       setBusy(false);
     }
@@ -52,6 +59,7 @@ export function useTodoActions(todoId: string) {
     try {
       await fetch(`/api/todos/${todoId}`, { method: "DELETE" });
       toast.success("todo deleted");
+      onDeleted?.();
       router.refresh();
     } catch {
       toast.error("failed to delete");
