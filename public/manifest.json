@@ -18,5 +18,21 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add expense",
+      "short_name": "Expense",
+      "description": "Quickly log a new expense",
+      "url": "/transactions?add=expense",
+      "icons": [{ "src": "/favicon.png", "sizes": "any", "type": "image/png" }]
+    },
+    {
+      "name": "Add income",
+      "short_name": "Income",
+      "description": "Quickly log new income",
+      "url": "/transactions?add=income",
+      "icons": [{ "src": "/favicon.png", "sizes": "any", "type": "image/png" }]
+    }
   ]
 }

@@ -1,10 +1,10 @@
 // components/transactions/AddTransactionButton.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, X, Check } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { getCategoriesByType, getCategoryLabel } from "@/utils";
 import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { TransactionType } from "@/types";
@@ -33,34 +33,73 @@ function writeLastTxn(type: TransactionType, category: string) {
 
 export default function AddTransactionButton() {
   const [open, setOpen] = useState(false);
+  const [presetType, setPresetType] = useState<TransactionType | null>(null);
+
+  // Phone shortcut support: opening /transactions?add=expense (or ?add=income,
+  // or ?add=1) — e.g. from a home-screen / PWA app-icon shortcut — pops the
+  // sheet straight open, with the type preselected. The param is then stripped
+  // from the URL so a refresh or back-navigation doesn't reopen it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const add = params.get("add");
+    if (!add) return;
+
+    // One-time init from the URL after mount (window isn't available during
+    // SSR, and the modal's presence differs from the server-rendered HTML, so
+    // this can't be a lazy useState initializer without a hydration mismatch).
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (add === "income" || add === "expense") setPresetType(add);
+    setOpen(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    params.delete("add");
+    const qs = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (qs ? `?${qs}` : "")
+    );
+  }, []);
 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { setPresetType(null); setOpen(true); }}
         className="hidden md:flex pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 items-center gap-2 shrink-0"
         style={{ fontSize: "9px" }}
       >
         <Plus size={12} /> ADD
       </button>
-      <FabButton icon={Plus} label="add transaction" onClick={() => setOpen(true)} />
+      <FabButton
+        icon={Plus}
+        label="add transaction"
+        onClick={() => { setPresetType(null); setOpen(true); }}
+      />
 
-      {open && <AddModal onClose={() => setOpen(false)} />}
+      {open && (
+        <AddModal presetType={presetType} onClose={() => setOpen(false)} />
+      )}
     </>
   );
 }
 
-function AddModal({ onClose }: { onClose: () => void }) {
+function AddModal({
+  presetType,
+  onClose,
+}: {
+  presetType: TransactionType | null;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
-  const [amountKey, setAmountKey] = useState(0);
 
   const last = readLastTxn();
-  const [type, setType] = useState<TransactionType>(last?.type ?? "expense");
+  const initialType: TransactionType = presetType ?? last?.type ?? "expense";
+  const [type, setType] = useState<TransactionType>(initialType);
   const [amount, setAmount] = useState<number>(0);
   const [form, setForm] = useState({
-    category: last?.category ?? "",
+    // only reuse the last category when it belongs to the type we're opening with
+    category: last?.type === initialType ? (last?.category ?? "") : "",
     description: "",
     note: "",
     transactionDate: new Date().toISOString().slice(0, 10),
@@ -92,16 +131,9 @@ function AddModal({ onClose }: { onClose: () => void }) {
       writeLastTxn(type, form.category);
       toast.success("transaction added!");
       router.refresh();
-
-      // Quick multi-add: keep the sheet open, reset amount/description/note but
-      // keep type + category (same category is usually reused a few times in a row)
-      setAmount(0);
-      setForm((f) => ({ ...f, description: "", note: "" }));
-      setAmountKey((k) => k + 1); // remounts RupiahInput so autoFocus fires again
-      setJustAdded(true);
-      setTimeout(() => setJustAdded(false), 1600);
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to add");
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to add");
     } finally {
       setLoading(false);
     }
@@ -115,17 +147,10 @@ function AddModal({ onClose }: { onClose: () => void }) {
       <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[90dvh] overflow-y-auto">
         <div className="bg-abyssal text-palladian px-4 py-3 flex items-center justify-between sticky top-0 z-10">
           <span className="font-pixel text-xs">ADD TRANSACTION</span>
-          <button onClick={onClose} aria-label="Done adding" className="text-oatmeal hover:text-burning-flame transition-colors">
+          <button onClick={onClose} aria-label="Close" className="text-oatmeal hover:text-burning-flame transition-colors">
             <X size={14} />
           </button>
         </div>
-
-        {justAdded && (
-          <div className="bg-burning-flame text-abyssal px-4 py-2 flex items-center gap-2 font-pixel animate-slide-up" style={{ fontSize: "8px" }}>
-            <Check size={12} strokeWidth={3} />
-            ADDED — keep going, or tap ✕ when done
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Type toggle */}
@@ -151,7 +176,6 @@ function AddModal({ onClose }: { onClose: () => void }) {
 
           {/* Rupiah amount input */}
           <RupiahInput
-            key={amountKey}
             value={amount}
             onChange={setAmount}
             required
@@ -240,7 +264,7 @@ function AddModal({ onClose }: { onClose: () => void }) {
               className="pixel-btn bg-muted text-foreground font-pixel px-4 py-3 transition-colors"
               style={{ fontSize: "9px" }}
             >
-              DONE
+              CANCEL
             </button>
           </div>
         </form>
