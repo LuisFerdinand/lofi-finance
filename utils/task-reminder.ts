@@ -116,7 +116,7 @@ export function renderReminderEmail(digest: ReminderDigest): {
           <span style="display:inline-block;background:${badge.bg};color:${badge.fg};font-size:10px;font-weight:bold;letter-spacing:.5px;padding:2px 6px;border:1px solid ${C.ink};">${t.priority.toUpperCase()}</span>
         </td>
         <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:13px;color:${C.ink};">${esc(t.title)}${checklist}</td>
-        <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:12px;color:${C.muted};white-space:nowrap;">${esc(t.projectName)}</td>
+        <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:12px;color:${C.muted};white-space:nowrap;">${esc(t.projectName ?? "personal")}</td>
         <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:12px;color:${due.color};white-space:nowrap;">${due.label}</td>
       </tr>`;
     })
@@ -177,7 +177,7 @@ export function renderReminderEmail(digest: ReminderDigest): {
       ? ["Nothing active right now."]
       : tasks.map((t) => {
           const due = fmtDue(t.dueDate, today);
-          return `- [${t.priority.toUpperCase()}] ${t.title} (${t.projectName}) — due: ${due.label}`;
+          return `- [${t.priority.toUpperCase()}] ${t.title} (${t.projectName ?? "personal"}) — due: ${due.label}`;
         })),
     ``,
     boardHref !== "#" ? `Open: ${boardHref}` : ``,

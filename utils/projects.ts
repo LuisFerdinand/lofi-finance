@@ -20,7 +20,8 @@ import { getLast8Weeks } from "@/utils";
 import type { ChecklistItem, Project, Todo } from "@/db/schema/projects";
 
 export type ProjectWithProgress = Project & { todoTotal: number; todoDone: number };
-export type TodoWithProject = Todo & { projectName: string; projectIcon: string };
+// projectName/projectIcon are null for a standalone task (no project attached).
+export type TodoWithProject = Todo & { projectName: string | null; projectIcon: string | null };
 
 const ACTIVE_STATUSES = ["open", "in_progress", "on_hold"] as const;
 
@@ -105,7 +106,8 @@ export async function getTodos(
 }
 
 export async function createTodo(data: {
-  projectId: string;
+  // Omitted (or null) creates a standalone task with no project.
+  projectId?: string | null;
   userId: string;
   title: string;
   notes?: string;
@@ -152,9 +154,9 @@ export async function deleteTodo(id: string, userId: string): Promise<void> {
 // ─── Cross-project task views ────────────────────────────────────────────────
 
 /**
- * Every todo the user owns, with its project's name + icon, ordered the same
- * way sortTodos() orders a single list (active stages → priority → due date).
- * Powers the "My Tasks" page.
+ * Every todo the user owns, with its project's name + icon (null for a
+ * standalone task with no project), ordered the same way sortTodos() orders a
+ * single list (active stages → priority → due date). Powers the "My Tasks" page.
  */
 export async function getAllTodos(userId: string): Promise<TodoWithProject[]> {
   return db
@@ -164,7 +166,7 @@ export async function getAllTodos(userId: string): Promise<TodoWithProject[]> {
       projectIcon: projects.icon,
     })
     .from(todos)
-    .innerJoin(projects, eq(todos.projectId, projects.id))
+    .leftJoin(projects, eq(todos.projectId, projects.id))
     .where(eq(todos.userId, userId))
     .orderBy(
       sql`case ${todos.status} when 'open' then 0 when 'in_progress' then 1 when 'on_hold' then 2 when 'done' then 3 else 4 end`,

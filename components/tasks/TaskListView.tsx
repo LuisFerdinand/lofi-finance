@@ -2,8 +2,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Calendar, ListChecks, Link2, Paperclip, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
+import { Search, Calendar, ListChecks, Link2, Paperclip, ExternalLink, Plus, StickyNote } from "lucide-react";
 import type { TodoWithProject } from "@/utils/projects";
 import {
   ProjectIconDisplay,
@@ -28,27 +30,33 @@ type PriorityScope = "all" | "high" | "medium" | "low";
 const TODAY = new Date().toISOString().slice(0, 10);
 
 export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [statusScope, setStatusScope] = useState<StatusScope>("active");
   const [priorityScope, setPriorityScope] = useState<PriorityScope>("all");
-  const [projectId, setProjectId] = useState<string | "all">("all");
+  const [projectId, setProjectId] = useState<string | "all" | "none">("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const projects = useMemo(() => {
     const map = new Map<string, { id: string; name: string; icon: string }>();
     for (const t of todos) {
-      if (!map.has(t.projectId)) {
-        map.set(t.projectId, { id: t.projectId, name: t.projectName, icon: t.projectIcon });
+      if (t.projectId && t.projectName && !map.has(t.projectId)) {
+        map.set(t.projectId, { id: t.projectId, name: t.projectName, icon: t.projectIcon ?? "folder" });
       }
     }
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [todos]);
 
+  const hasStandalone = useMemo(() => todos.some((t) => !t.projectId), [todos]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return todos.filter((t) => {
-      if (q && !t.title.toLowerCase().includes(q) && !t.projectName.toLowerCase().includes(q)) return false;
-      if (projectId !== "all" && t.projectId !== projectId) return false;
+      if (q && !t.title.toLowerCase().includes(q) && !(t.projectName ?? "").toLowerCase().includes(q)) return false;
+      if (projectId === "none" && t.projectId) return false;
+      if (projectId !== "all" && projectId !== "none" && t.projectId !== projectId) return false;
       if (priorityScope !== "all" && t.priority !== priorityScope) return false;
       if (statusScope === "active" && !ACTIVE.includes(t.status as TodoStatusKey)) return false;
       if (statusScope === "done" && t.status !== "done") return false;
@@ -58,8 +66,50 @@ export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
 
   const openTodo = openId ? todos.find((t) => t.id === openId) ?? null : null;
 
+  async function handleQuickAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const title = quickTitle.trim();
+    if (!title) return;
+    setAdding(true);
+    try {
+      const res = await fetch("/api/todos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error);
+      }
+      setQuickTitle("");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to add task");
+    } finally {
+      setAdding(false);
+    }
+  }
+
   return (
     <div className="pixel-box bg-card overflow-hidden">
+      {/* Quick add — a note with no project, for "deal with this later" items */}
+      <form onSubmit={handleQuickAdd} className="flex items-center gap-2 p-3 border-b border-border bg-background/40">
+        <input
+          value={quickTitle}
+          onChange={(e) => setQuickTitle(e.target.value)}
+          placeholder="Quick note — no project needed, hit enter..."
+          className="flex-1 pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-burning-flame placeholder:text-muted-foreground"
+        />
+        <button
+          type="submit"
+          disabled={adding || !quickTitle.trim()}
+          aria-label="Add task"
+          className="pixel-btn bg-burning-flame text-abyssal p-2.5 disabled:opacity-50 shrink-0"
+        >
+          <Plus size={14} strokeWidth={3} />
+        </button>
+      </form>
+
       {/* Filters */}
       <div className="p-3 border-b border-border space-y-2">
         <div className="flex items-center gap-2 pixel-inset bg-background px-2 py-1.5">
@@ -104,7 +154,7 @@ export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
           ))}
         </div>
 
-        {projects.length > 1 && (
+        {(projects.length > 1 || (projects.length >= 1 && hasStandalone)) && (
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
@@ -131,6 +181,19 @@ export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
                 <ProjectIconDisplay icon={p.icon} size={9} /> {p.name}
               </button>
             ))}
+            {hasStandalone && (
+              <button
+                type="button"
+                onClick={() => setProjectId("none")}
+                className={cn(
+                  "pixel-tag border-abyssal transition-colors inline-flex items-center gap-1",
+                  projectId === "none" ? "bg-blue-fantastic text-palladian" : "bg-muted text-foreground hover:bg-oatmeal"
+                )}
+                style={{ fontSize: "7px" }}
+              >
+                <StickyNote size={9} /> NO PROJECT
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -138,7 +201,7 @@ export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
       {/* Rows — a responsive card grid so the page fills the width nicely */}
       {filtered.length === 0 ? (
         <p className="font-mono text-xs text-muted-foreground text-center p-8">
-          {todos.length === 0 ? "no tasks yet — create one inside a project" : "no tasks match these filters"}
+          {todos.length === 0 ? "no tasks yet — add a quick note above or create one inside a project" : "no tasks match these filters"}
         </p>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-2 gap-2 p-2">
@@ -157,8 +220,17 @@ export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <ProjectIconDisplay icon={todo.projectIcon} size={11} className="text-muted-foreground shrink-0" />
-                  <span className="font-mono text-xs text-muted-foreground truncate">{todo.projectName}</span>
+                  {todo.projectName ? (
+                    <>
+                      <ProjectIconDisplay icon={todo.projectIcon ?? "folder"} size={11} className="text-muted-foreground shrink-0" />
+                      <span className="font-mono text-xs text-muted-foreground truncate">{todo.projectName}</span>
+                    </>
+                  ) : (
+                    <>
+                      <StickyNote size={11} className="text-muted-foreground shrink-0" />
+                      <span className="font-mono text-xs text-muted-foreground truncate italic">no project</span>
+                    </>
+                  )}
                 </div>
                 <p className={cn("font-mono text-sm leading-snug", isDone && "line-through text-muted-foreground")}>{todo.title}</p>
                 <div className="flex items-center gap-2 flex-wrap mt-auto pt-1">
