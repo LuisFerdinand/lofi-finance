@@ -33,41 +33,40 @@ export default function GoalCard({ goal, compact = false }: Props) {
   const isCancelled = goal.status === "cancelled";
   const isOverdue = daysLeft !== null && daysLeft < 0 && !isCompleted;
 
-  async function handleTogglePin() {
+  async function patchGoal(data: Record<string, unknown>, success?: string) {
     try {
-      await fetch(`/api/goals/${goal.id}`, {
+      const res = await fetch(`/api/goals/${goal.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPinned: !goal.isPinned }),
+        body: JSON.stringify(data),
       });
+      if (!res.ok) throw new Error();
+      if (success) toast.success(success);
       router.refresh();
-    } catch { toast.error("failed to update"); }
+    } catch {
+      toast.error("failed to update goal");
+    }
   }
+
+  const handleTogglePin = () => patchGoal({ isPinned: !goal.isPinned });
+  const handleMarkComplete = () =>
+    patchGoal({ status: isCompleted ? "active" : "completed" }, isCompleted ? "goal reopened" : "goal complete! 🎉");
 
   async function handleDelete() {
     setDeleting(true);
     try {
-      await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
       toast.success("goal deleted");
-      router.refresh();
+      setConfirmOpen(false);
+      // On the goal's own history page there's nothing left to show.
+      if (window.location.pathname === `/goals/${goal.id}`) router.push("/goals");
+      else router.refresh();
     } catch {
-      toast.error("failed to delete");
+      toast.error("failed to delete goal");
     } finally {
       setDeleting(false);
-      setConfirmOpen(false);
     }
-  }
-
-  async function handleMarkComplete() {
-    try {
-      await fetch(`/api/goals/${goal.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: isCompleted ? "active" : "completed" }),
-      });
-      toast.success(isCompleted ? "goal reopened" : "goal complete! 🎉");
-      router.refresh();
-    } catch { toast.error("failed to update"); }
   }
 
   const barColor = isCompleted ? "bg-burning-flame"
@@ -88,7 +87,7 @@ export default function GoalCard({ goal, compact = false }: Props) {
               <div className="flex items-center gap-2">
                 <p className="font-pixel text-xs truncate leading-none">{goal.name}</p>
                 {goal.isPinned && (
-                  <span className="pixel-tag bg-burning-flame text-abyssal border-abyssal shrink-0" style={{ fontSize: "6px" }}>PINNED</span>
+                  <span className="pixel-tag bg-burning-flame text-abyssal border-abyssal shrink-0" style={{ fontSize: "8px" }}>PINNED</span>
                 )}
               </div>
               {goal.notes && !compact && (
@@ -98,11 +97,11 @@ export default function GoalCard({ goal, compact = false }: Props) {
           </div>
           <div className="shrink-0 ml-2">
             {isCompleted ? (
-              <span className="pixel-tag bg-burning-flame text-abyssal border-abyssal" style={{ fontSize: "6px" }}>✓ DONE</span>
+              <span className="pixel-tag bg-burning-flame text-abyssal border-abyssal" style={{ fontSize: "8px" }}>✓ DONE</span>
             ) : isOverdue ? (
-              <span className="pixel-tag bg-truffle text-palladian border-abyssal" style={{ fontSize: "6px" }}>OVERDUE</span>
+              <span className="pixel-tag bg-truffle text-palladian border-abyssal" style={{ fontSize: "8px" }}>OVERDUE</span>
             ) : daysLeft !== null ? (
-              <span className="pixel-tag bg-abyssal text-palladian border-abyssal" style={{ fontSize: "6px" }}>{daysLeft}d LEFT</span>
+              <span className="pixel-tag bg-abyssal text-palladian border-abyssal" style={{ fontSize: "8px" }}>{daysLeft}d LEFT</span>
             ) : null}
           </div>
         </div>
@@ -111,10 +110,10 @@ export default function GoalCard({ goal, compact = false }: Props) {
         <div className="px-4 py-3">
           <div className="flex items-end justify-between mb-2">
             <div>
-              <p className="font-pixel text-burning-flame-ink" style={{ fontSize: "11px" }}>{centsToDisplay(goal.currentAmount)}</p>
+              <p className="font-pixel text-burning-flame-ink" style={{ fontSize: "13px" }}>{centsToDisplay(goal.currentAmount)}</p>
               <p className="font-mono text-xs text-muted-foreground">of {centsToDisplay(goal.targetAmount)}</p>
             </div>
-            <p className="font-pixel text-foreground" style={{ fontSize: "11px" }}>{progress}%</p>
+            <p className="font-pixel text-foreground" style={{ fontSize: "13px" }}>{progress}%</p>
           </div>
 
           <div className="h-4 bg-muted border-2 border-abyssal relative overflow-hidden">
@@ -123,7 +122,7 @@ export default function GoalCard({ goal, compact = false }: Props) {
               backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.4) 3px, rgba(0,0,0,0.4) 4px)",
             }} />
             {progress > 20 && (
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 font-pixel text-abyssal" style={{ fontSize: "7px" }}>
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 font-pixel text-abyssal" style={{ fontSize: "9px" }}>
                 {centsToDisplay(goal.currentAmount)}
               </span>
             )}
@@ -140,20 +139,20 @@ export default function GoalCard({ goal, compact = false }: Props) {
         {!compact && (
           <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
             {!isCompleted && !isCancelled && (
-              <button onClick={() => setContributeOpen(true)} className="pixel-btn bg-burning-flame text-abyssal font-pixel px-3 py-2 flex-1" style={{ fontSize: "8px" }}>
+              <button onClick={() => setContributeOpen(true)} className="pixel-btn bg-burning-flame text-abyssal font-pixel px-3 py-2 flex-1" style={{ fontSize: "10px" }}>
                 + CONTRIBUTE
               </button>
             )}
-            <Link href={`/goals/${goal.id}`} className="pixel-btn bg-muted text-foreground font-pixel px-3 py-2 flex items-center gap-1" style={{ fontSize: "8px" }}>
+            <Link href={`/goals/${goal.id}`} className="pixel-btn bg-muted text-foreground font-pixel px-3 py-2 flex items-center gap-1" style={{ fontSize: "10px" }}>
               HISTORY <ChevronRight size={10} />
             </Link>
-            <button onClick={handleTogglePin} title={goal.isPinned ? "unpin" : "pin"} className="pixel-btn p-2 bg-muted hover:bg-blue-fantastic hover:text-palladian transition-colors">
+            <button onClick={handleTogglePin} title={goal.isPinned ? "unpin" : "pin"} aria-label={goal.isPinned ? "unpin goal" : "pin goal"} className="pixel-btn p-2 bg-muted hover:bg-blue-fantastic hover:text-palladian transition-colors">
               {goal.isPinned ? <PinOff size={12} /> : <Pin size={12} />}
             </button>
-            <button onClick={handleMarkComplete} title={isCompleted ? "reopen" : "mark complete"} className="pixel-btn p-2 bg-muted hover:bg-burning-flame hover:text-abyssal transition-colors">
+            <button onClick={handleMarkComplete} title={isCompleted ? "reopen" : "mark complete"} aria-label={isCompleted ? "reopen goal" : "mark goal complete"} className="pixel-btn p-2 bg-muted hover:bg-burning-flame hover:text-abyssal transition-colors">
               {isCompleted ? <XCircle size={12} /> : <CheckCircle size={12} />}
             </button>
-            <button onClick={() => setConfirmOpen(true)} title="delete goal" className="pixel-btn p-2 bg-muted text-truffle hover:bg-truffle hover:text-palladian transition-colors">
+            <button onClick={() => setConfirmOpen(true)} title="delete goal" aria-label="delete goal" className="pixel-btn p-2 bg-muted text-truffle hover:bg-truffle hover:text-palladian transition-colors">
               <Trash2 size={12} />
             </button>
           </div>
@@ -161,7 +160,7 @@ export default function GoalCard({ goal, compact = false }: Props) {
 
         {compact && !isCompleted && !isCancelled && (
           <div className="px-4 pb-3">
-            <button onClick={() => setContributeOpen(true)} className="w-full pixel-btn bg-burning-flame text-abyssal font-pixel py-2" style={{ fontSize: "8px" }}>
+            <button onClick={() => setContributeOpen(true)} className="w-full pixel-btn bg-burning-flame text-abyssal font-pixel py-2" style={{ fontSize: "10px" }}>
               + CONTRIBUTE
             </button>
           </div>

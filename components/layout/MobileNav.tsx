@@ -34,7 +34,7 @@ export default function MobileNav({ role }: { role: "admin" | "user" }) {
               )}
             >
               <item.icon size={16} />
-              <span style={{ fontSize: "7px" }}>{item.label}</span>
+              <span style={{ fontSize: "9px" }}>{item.label}</span>
             </Link>
           );
         })}

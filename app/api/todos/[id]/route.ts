@@ -1,28 +1,9 @@
 // app/api/todos/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { updateTodo, deleteTodo } from "@/utils/projects";
 import { z } from "zod";
-
-const updateSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  notes: z.string().max(2000).nullable().optional(),
-  imageUrl: z.string().url().max(500).nullable().optional(),
-  link: z.string().url().max(500).nullable().optional(),
-  checklist: z
-    .array(
-      z.object({
-        id: z.string().min(1).max(64),
-        text: z.string().min(1).max(200),
-        done: z.boolean(),
-      })
-    )
-    .max(50)
-    .optional(),
-  status: z.enum(["open", "in_progress", "on_hold", "done", "cancelled"]).optional(),
-  priority: z.enum(["low", "medium", "high"]).optional(),
-  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-});
+import { auth } from "@/lib/auth";
+import { updateTodo, deleteTodo, getProjectById } from "@/utils/projects";
+import { firstZodMessage, updateTodoSchema } from "@/utils/todo-schema";
 
 export async function PATCH(
   req: NextRequest,
@@ -33,13 +14,18 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await req.json();
-    const data = updateSchema.parse(body);
+    const data = updateTodoSchema.parse(await req.json());
+    if (data.projectId) {
+      const project = await getProjectById(data.projectId, session.user.id);
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
     const todo = await updateTodo(id, session.user.id, data);
+    if (!todo) return NextResponse.json({ error: "Task not found" }, { status: 404 });
     return NextResponse.json(todo);
   } catch (err) {
-    if (err instanceof z.ZodError) return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
-    return NextResponse.json({ error: "Failed to update todo" }, { status: 500 });
+    if (err instanceof z.ZodError) return NextResponse.json({ error: firstZodMessage(err) }, { status: 400 });
+    console.error("[todos] update failed", err);
+    return NextResponse.json({ error: "Failed to update task" }, { status: 500 });
   }
 }
 
@@ -50,7 +36,13 @@ export async function DELETE(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
-  await deleteTodo(id, session.user.id);
-  return NextResponse.json({ success: true });
+  try {
+    const { id } = await params;
+    const deleted = await deleteTodo(id, session.user.id);
+    if (!deleted) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[todos] delete failed", err);
+    return NextResponse.json({ error: "Failed to delete task" }, { status: 500 });
+  }
 }

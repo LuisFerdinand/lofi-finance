@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/dashboard/RecentTransactions.tsx
 import Link from "next/link";
 import { centsToDisplay, formatDate, getCategoryLabel } from "@/utils";
@@ -18,7 +17,7 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
         <Link
           href="/transactions"
           className="flex items-center gap-1 font-pixel text-xs text-burning-flame-ink hover:underline"
-          style={{ fontSize: "8px" }}
+          style={{ fontSize: "10px" }}
         >
           VIEW ALL <ArrowRight size={10} />
         </Link>
@@ -37,14 +36,14 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
             >
               {/* Category icon */}
               <div className="w-8 h-8 bg-muted border border-border flex items-center justify-center shrink-0">
-                <CategoryIconDisplay category={tx.category as any} size={16} />
+                <CategoryIconDisplay category={tx.category} size={16} />
               </div>
 
               {/* Details */}
               <div className="flex-1 min-w-0">
                 <p className="font-mono text-xs font-bold truncate">{tx.description}</p>
                 <p className="font-mono text-xs text-muted-foreground">
-                  {getCategoryLabel(tx.category as any)} · {formatDate(tx.transactionDate)}
+                  {getCategoryLabel(tx.category)} · {formatDate(tx.transactionDate)}
                 </p>
               </div>
 
@@ -53,7 +52,7 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
                 className={`font-pixel text-xs shrink-0 ${
                   tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
-                style={{ fontSize: "10px" }}
+                style={{ fontSize: "12px" }}
               >
                 {tx.type === "income" ? "+" : "-"}
                 {centsToDisplay(tx.amount)}

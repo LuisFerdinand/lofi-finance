@@ -23,5 +23,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: UserRole;
     isActive: boolean;
+    /** Epoch ms of the last DB re-validation (see lib/auth.ts). */
+    checkedAt?: number;
   }
 }

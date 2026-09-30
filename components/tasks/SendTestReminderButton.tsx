@@ -42,7 +42,7 @@ export default function SendTestReminderButton() {
         target="_blank"
         rel="noopener noreferrer"
         className="pixel-btn bg-muted text-foreground font-pixel px-3 py-2 inline-flex items-center gap-1.5 hover:bg-oatmeal transition-colors"
-        style={{ fontSize: "8px" }}
+        style={{ fontSize: "10px" }}
       >
         <Eye size={12} /> PREVIEW
       </a>
@@ -51,7 +51,7 @@ export default function SendTestReminderButton() {
         onClick={sendTest}
         disabled={busy}
         className="pixel-btn bg-burning-flame text-abyssal font-pixel px-3 py-2 inline-flex items-center gap-1.5 disabled:opacity-60"
-        style={{ fontSize: "8px" }}
+        style={{ fontSize: "10px" }}
       >
         {busy ? <Loader2 size={12} className="animate-spin" /> : <Mail size={12} />}
         {busy ? "SENDING..." : "TEST EMAIL"}

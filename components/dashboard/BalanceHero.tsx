@@ -39,7 +39,7 @@ export default function BalanceHero({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-pixel flex items-center gap-1.5 opacity-70" style={{ fontSize: "8px" }}>
+          <p className="font-pixel flex items-center gap-1.5 opacity-70" style={{ fontSize: "10px" }}>
             <Wallet size={11} /> TOTAL BALANCE
           </p>
           <p className="font-pixel text-base sm:text-xl mt-2 leading-tight break-all">
@@ -75,20 +75,20 @@ export default function BalanceHero({
 
       <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-palladian/20 font-mono text-xs">
         <div>
-          <p className="opacity-70" style={{ fontSize: "10px" }}>all income</p>
-          <p className="font-pixel mt-1 break-all" style={{ fontSize: "9px" }}>
+          <p className="opacity-70" style={{ fontSize: "12px" }}>all income</p>
+          <p className="font-pixel mt-1 break-all" style={{ fontSize: "11px" }}>
             {centsToDisplay(totalIncome)}
           </p>
         </div>
         <div>
-          <p className="opacity-70" style={{ fontSize: "10px" }}>all expense</p>
-          <p className="font-pixel mt-1 break-all" style={{ fontSize: "9px" }}>
+          <p className="opacity-70" style={{ fontSize: "12px" }}>all expense</p>
+          <p className="font-pixel mt-1 break-all" style={{ fontSize: "11px" }}>
             {centsToDisplay(totalExpense)}
           </p>
         </div>
         <div>
-          <p className="opacity-70" style={{ fontSize: "10px" }}>vs last month</p>
-          <p className="font-pixel mt-1 break-all" style={{ fontSize: "9px" }}>
+          <p className="opacity-70" style={{ fontSize: "12px" }}>vs last month</p>
+          <p className="font-pixel mt-1 break-all" style={{ fontSize: "11px" }}>
             {swing >= 0 ? "+" : "-"}
             {centsToDisplay(Math.abs(swing))}
           </p>

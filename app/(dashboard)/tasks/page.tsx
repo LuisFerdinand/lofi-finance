@@ -1,40 +1,53 @@
 // app/(dashboard)/tasks/page.tsx
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getAllTodos, getTaskStats } from "@/utils/projects";
+import { getAllTodos, getProjectOptions } from "@/utils/projects";
+import { parseTaskView, toProjectOptions, toTaskItem } from "@/utils/projects-helpers";
+import { TaskProvider } from "@/components/tasks/TaskProvider";
+import TaskWorkspace from "@/components/tasks/TaskWorkspace";
 import ProductivityChart from "@/components/tasks/ProductivityChart";
-import TaskListView from "@/components/tasks/TaskListView";
 import SendTestReminderButton from "@/components/tasks/SendTestReminderButton";
 
-export default async function TasksPage() {
+export const metadata: Metadata = { title: "Tasks" };
+
+export default async function TasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [todos, stats] = await Promise.all([
+  const [todos, projectOptions, params] = await Promise.all([
     getAllTodos(session.user.id),
-    getTaskStats(session.user.id),
+    getProjectOptions(session.user.id),
+    searchParams,
   ]);
+  const tasks = todos.map((t) => toTaskItem(t));
+  const projects = toProjectOptions(projectOptions);
 
   return (
-    <div className="space-y-5 animate-slide-up">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-pixel text-sm leading-relaxed">TASKS</h1>
-          <p className="font-mono text-xs text-muted-foreground mt-1">
-            {stats.activeCount} active · {todos.length} total across all projects
-          </p>
+    <TaskProvider initialTasks={tasks} projects={projects}>
+      <div className="space-y-5 animate-slide-up">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="font-pixel text-sm leading-relaxed">TASKS</h1>
+            <p className="font-mono text-sm text-muted-foreground mt-1">
+              everything on your plate, across every project
+            </p>
+          </div>
+          <SendTestReminderButton />
         </div>
-        <SendTestReminderButton />
-      </div>
 
-      <div className="grid gap-5 2xl:grid-cols-[1fr_minmax(380px,440px)] items-start">
-        <div className="2xl:order-2 2xl:sticky 2xl:top-0">
-          <ProductivityChart stats={stats} />
-        </div>
-        <div className="2xl:order-1 min-w-0">
-          <TaskListView todos={todos} />
-        </div>
+        <ProductivityChart />
+
+        <TaskWorkspace
+          initialView={parseTaskView(params.view)}
+          showProject
+          emptyHint="no tasks yet — add one above, or open a project to plan its work"
+        />
       </div>
-    </div>
+    </TaskProvider>
   );
 }

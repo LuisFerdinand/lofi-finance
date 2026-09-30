@@ -5,15 +5,16 @@ import { getGoals, getGoalsSummary } from "@/utils/goals";
 import { centsToDisplay } from "@/utils";
 import GoalCard from "@/components/goals/GoalCard";
 import AddGoalButton from "@/components/goals/AddGoalButton";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Savings Goals" };
 
 export default async function GoalsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [goals, summary] = await Promise.all([
-    getGoals(session.user.id),
-    getGoalsSummary(session.user.id),
-  ]);
+  const goals = await getGoals(session.user.id);
+  const summary = await getGoalsSummary(session.user.id, goals);
 
   const active = goals.filter((g) => g.status === "active");
   const completed = goals.filter((g) => g.status === "completed");
@@ -41,7 +42,7 @@ export default async function GoalsPage() {
           { label: "COMPLETED", value: String(summary.completed), bg: "bg-oatmeal", text: "text-abyssal" },
         ].map((s) => (
           <div key={s.label} className={`pixel-box ${s.bg} ${s.text} p-4`}>
-            <p className="font-pixel leading-none mb-2" style={{ fontSize: "7px" }}>{s.label}</p>
+            <p className="font-pixel leading-none mb-2" style={{ fontSize: "9px" }}>{s.label}</p>
             <p className="font-pixel text-sm break-all">{s.value}</p>
           </div>
         ))}
@@ -61,7 +62,7 @@ export default async function GoalsPage() {
       {/* Active goals */}
       {active.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
+          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "10px" }}>
             ▶ ACTIVE ({active.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -75,7 +76,7 @@ export default async function GoalsPage() {
       {/* Completed goals */}
       {completed.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
+          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "10px" }}>
             ✓ COMPLETED ({completed.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -89,7 +90,7 @@ export default async function GoalsPage() {
       {/* Cancelled goals */}
       {cancelled.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
+          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "10px" }}>
             ✕ CANCELLED ({cancelled.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

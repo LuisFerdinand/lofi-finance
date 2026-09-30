@@ -51,7 +51,7 @@ export default function StatsGrid({ stats }: StatsGridProps) {
           className={`pixel-box ${card.bg} ${card.text} p-4 scanlines`}
         >
           <div className="flex items-start justify-between mb-3">
-            <p className="font-pixel leading-none" style={{ fontSize: "7px" }}>
+            <p className="font-pixel leading-none" style={{ fontSize: "9px" }}>
               {card.label}
             </p>
             <card.icon size={14} className="opacity-60" />

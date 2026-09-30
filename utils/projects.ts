@@ -2,28 +2,15 @@
 import "server-only"; // prevents DB code leaking into client bundles
 import { db } from "@/db";
 import { projects, todos } from "@/db/schema/projects";
-import {
-  eq,
-  and,
-  desc,
-  asc,
-  ilike,
-  sql,
-  gte,
-  lt,
-  isNotNull,
-  inArray,
-  count,
-  getTableColumns,
-} from "drizzle-orm";
-import { getLast8Weeks } from "@/utils";
-import type { ChecklistItem, Project, Todo } from "@/db/schema/projects";
+import { eq, and, desc, asc, ilike, sql, getTableColumns } from "drizzle-orm";
+import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
+import type { ChecklistItem, Project, Todo, TodoImage, TodoLink } from "@/db/schema/projects";
 
 export type ProjectWithProgress = Project & { todoTotal: number; todoDone: number };
 // projectName/projectIcon are null for a standalone task (no project attached).
 export type TodoWithProject = Todo & { projectName: string | null; projectIcon: string | null };
 
-const ACTIVE_STATUSES = ["open", "in_progress", "on_hold"] as const;
+type TodoStatus = "open" | "in_progress" | "on_hold" | "done" | "cancelled";
 
 export async function getProjectsWithProgress(userId: string): Promise<ProjectWithProgress[]> {
   return db
@@ -47,6 +34,20 @@ export async function getProjectsWithProgress(userId: string): Promise<ProjectWi
     .orderBy(desc(projects.isPinned), desc(projects.createdAt));
 }
 
+/** Lightweight list for pickers (move-to-project, quick-add). Archived last. */
+export async function getProjectOptions(
+  userId: string
+): Promise<{ id: string; name: string; icon: string; status: Project["status"] }[]> {
+  return db
+    .select({ id: projects.id, name: projects.name, icon: projects.icon, status: projects.status })
+    .from(projects)
+    .where(eq(projects.userId, userId))
+    .orderBy(
+      sql`case ${projects.status} when 'active' then 0 when 'completed' then 1 else 2 end`,
+      asc(projects.name)
+    );
+}
+
 export async function getProjectById(id: string, userId: string): Promise<Project | null> {
   const [project] = await db
     .select()
@@ -66,6 +67,7 @@ export async function createProject(data: {
   return project;
 }
 
+/** Returns null when the project doesn't exist or isn't the user's. */
 export async function updateProject(
   id: string,
   userId: string,
@@ -76,23 +78,27 @@ export async function updateProject(
     status: "active" | "completed" | "archived";
     isPinned: boolean;
   }>
-): Promise<Project> {
+): Promise<Project | null> {
   const [project] = await db
     .update(projects)
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(projects.id, id), eq(projects.userId, userId)))
     .returning();
-  return project;
+  return project ?? null;
 }
 
-export async function deleteProject(id: string, userId: string): Promise<void> {
-  await db.delete(projects).where(and(eq(projects.id, id), eq(projects.userId, userId)));
+export async function deleteProject(id: string, userId: string): Promise<boolean> {
+  const rows = await db
+    .delete(projects)
+    .where(and(eq(projects.id, id), eq(projects.userId, userId)))
+    .returning({ id: projects.id });
+  return rows.length > 0;
 }
 
 export async function getTodos(
   projectId: string,
   userId: string,
-  filters?: { status?: "open" | "in_progress" | "on_hold" | "done" | "cancelled"; search?: string }
+  filters?: { status?: TodoStatus; search?: string }
 ): Promise<Todo[]> {
   const conditions = [eq(todos.projectId, projectId), eq(todos.userId, userId)];
   if (filters?.status) conditions.push(eq(todos.status, filters.status));
@@ -105,50 +111,82 @@ export async function getTodos(
     .orderBy(asc(todos.createdAt));
 }
 
+/** One todo with its project's name/icon, or null if it isn't the user's. */
+export async function getTodoById(id: string, userId: string): Promise<TodoWithProject | null> {
+  const [row] = await db
+    .select({
+      ...getTableColumns(todos),
+      projectName: projects.name,
+      projectIcon: projects.icon,
+    })
+    .from(todos)
+    .leftJoin(projects, eq(todos.projectId, projects.id))
+    .where(and(eq(todos.id, id), eq(todos.userId, userId)))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function createTodo(data: {
   // Omitted (or null) creates a standalone task with no project.
   projectId?: string | null;
   userId: string;
   title: string;
   notes?: string;
+  status?: TodoStatus;
   priority?: "low" | "medium" | "high";
-  dueDate?: string;
+  dueDate?: string | null;
 }): Promise<Todo> {
-  const [todo] = await db.insert(todos).values(data).returning();
+  const [todo] = await db
+    .insert(todos)
+    .values({ ...data, completedAt: data.status === "done" ? new Date() : null })
+    .returning();
   return todo;
 }
 
-export async function updateTodo(
-  id: string,
-  userId: string,
-  data: Partial<{
-    title: string;
-    notes: string | null;
-    imageUrl: string | null;
-    link: string | null;
-    checklist: ChecklistItem[];
-    status: "open" | "in_progress" | "on_hold" | "done" | "cancelled";
-    priority: "low" | "medium" | "high";
-    dueDate: string | null;
-  }>
-): Promise<Todo> {
-  const patch: Partial<typeof todos.$inferInsert> & { updatedAt: Date } = {
-    ...data,
-    updatedAt: new Date(),
-  };
-  // completedAt only reflects the "done" stage — clear it for every other status
-  if (data.status) patch.completedAt = data.status === "done" ? new Date() : null;
+export type TodoUpdate = Partial<{
+  title: string;
+  notes: string | null;
+  imageUrl: string | null;
+  link: string | null;
+  links: TodoLink[];
+  images: TodoImage[];
+  checklist: ChecklistItem[];
+  status: TodoStatus;
+  priority: "low" | "medium" | "high";
+  dueDate: string | null;
+  projectId: string | null;
+  sortOrder: number | null;
+}>;
+
+/** Returns null when the todo doesn't exist or isn't the user's. */
+export async function updateTodo(id: string, userId: string, data: TodoUpdate): Promise<Todo | null> {
+  const { status, ...rest } = data;
+  const patch: PgUpdateSetSource<typeof todos> = { ...rest, updatedAt: new Date() };
+  if (status) {
+    patch.status = status;
+    // completedAt marks the moment a task *became* done — keep the original
+    // timestamp when an already-done task is re-saved (the detail page sends
+    // its status with every save), clear it for every other stage.
+    patch.completedAt =
+      status === "done"
+        ? sql`case when ${todos.status} = 'done' then coalesce(${todos.completedAt}, now()) else now() end`
+        : null;
+  }
 
   const [todo] = await db
     .update(todos)
     .set(patch)
     .where(and(eq(todos.id, id), eq(todos.userId, userId)))
     .returning();
-  return todo;
+  return todo ?? null;
 }
 
-export async function deleteTodo(id: string, userId: string): Promise<void> {
-  await db.delete(todos).where(and(eq(todos.id, id), eq(todos.userId, userId)));
+export async function deleteTodo(id: string, userId: string): Promise<boolean> {
+  const rows = await db
+    .delete(todos)
+    .where(and(eq(todos.id, id), eq(todos.userId, userId)))
+    .returning({ id: todos.id });
+  return rows.length > 0;
 }
 
 // ─── Cross-project task views ────────────────────────────────────────────────
@@ -156,7 +194,8 @@ export async function deleteTodo(id: string, userId: string): Promise<void> {
 /**
  * Every todo the user owns, with its project's name + icon (null for a
  * standalone task with no project), ordered the same way sortTodos() orders a
- * single list (active stages → priority → due date). Powers the "My Tasks" page.
+ * single list (active stages → priority → due date). Powers the "Tasks" page
+ * and the daily reminder email.
  */
 export async function getAllTodos(userId: string): Promise<TodoWithProject[]> {
   return db
@@ -174,84 +213,4 @@ export async function getAllTodos(userId: string): Promise<TodoWithProject[]> {
       sql`${todos.dueDate} asc nulls last`,
       asc(todos.createdAt)
     );
-}
-
-export interface TaskStats {
-  activeCount: number;
-  completedThisWeek: number;
-  overdueCount: number;
-  completionRate: number; // done / (done + active), all-time, as a %
-  weekly: { label: string; completed: number; created: number }[];
-}
-
-/**
- * Headline task numbers + an 8-week throughput series (tasks completed vs
- * created each week) for the productivity chart.
- */
-export async function getTaskStats(userId: string): Promise<TaskStats> {
-  const weeks = getLast8Weeks();
-  const windowStart = new Date(`${weeks[0].start}T00:00:00Z`);
-  const today = new Date().toISOString().slice(0, 10);
-
-  const completedWeek = sql<string>`to_char(date_trunc('week', ${todos.completedAt}), 'YYYY-MM-DD')`;
-  const createdWeek = sql<string>`to_char(date_trunc('week', ${todos.createdAt}), 'YYYY-MM-DD')`;
-
-  const [statusRows, completedRows, createdRows, overdueRows] = await Promise.all([
-    db
-      .select({ status: todos.status, c: count() })
-      .from(todos)
-      .where(eq(todos.userId, userId))
-      .groupBy(todos.status),
-    db
-      .select({ wk: completedWeek, c: count() })
-      .from(todos)
-      .where(
-        and(
-          eq(todos.userId, userId),
-          isNotNull(todos.completedAt),
-          gte(todos.completedAt, windowStart)
-        )
-      )
-      .groupBy(completedWeek),
-    db
-      .select({ wk: createdWeek, c: count() })
-      .from(todos)
-      .where(and(eq(todos.userId, userId), gte(todos.createdAt, windowStart)))
-      .groupBy(createdWeek),
-    db
-      .select({ c: count() })
-      .from(todos)
-      .where(
-        and(
-          eq(todos.userId, userId),
-          isNotNull(todos.dueDate),
-          lt(todos.dueDate, today),
-          inArray(todos.status, [...ACTIVE_STATUSES])
-        )
-      ),
-  ]);
-
-  let done = 0;
-  let active = 0;
-  for (const row of statusRows) {
-    const n = Number(row.c);
-    if (row.status === "done") done = n;
-    else if ((ACTIVE_STATUSES as readonly string[]).includes(row.status)) active += n;
-  }
-
-  const completedMap = new Map(completedRows.map((r) => [r.wk, Number(r.c)]));
-  const createdMap = new Map(createdRows.map((r) => [r.wk, Number(r.c)]));
-  const weekly = weeks.map((w) => ({
-    label: w.label,
-    completed: completedMap.get(w.start) ?? 0,
-    created: createdMap.get(w.start) ?? 0,
-  }));
-
-  return {
-    activeCount: active,
-    completedThisWeek: weekly[weekly.length - 1]?.completed ?? 0,
-    overdueCount: Number(overdueRows[0]?.c ?? 0),
-    completionRate: done + active > 0 ? Math.round((done / (done + active)) * 100) : 0,
-    weekly,
-  };
 }

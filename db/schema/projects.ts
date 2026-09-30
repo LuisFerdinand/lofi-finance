@@ -9,11 +9,16 @@ import {
   pgEnum,
   boolean,
   jsonb,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 /** One row of a todo's checklist — stored as a JSONB array on the todo itself. */
 export type ChecklistItem = { id: string; text: string; done: boolean };
+/** A labeled reference link on a todo (Figma, PR, doc…). */
+export type TodoLink = { id: string; label: string; url: string };
+/** An uploaded image attachment on a todo (Cloudinary secure_url). */
+export type TodoImage = { id: string; url: string; name?: string };
 
 export const projectStatusEnum = pgEnum("project_status", [
   "active",
@@ -60,15 +65,29 @@ export const todos = pgTable("todos", {
     .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   notes: text("notes"),
-  // Optional working context attached to a task.
+  // Legacy single attachment fields — superseded by `images` / `links` below.
+  // Still read (folded into the arrays by toTaskItem) so older rows keep their
+  // attachments; new writes clear them.
   imageUrl: text("image_url"),
   link: text("link"),
+  links: jsonb("links")
+    .$type<TodoLink[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  images: jsonb("images")
+    .$type<TodoImage[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   checklist: jsonb("checklist")
     .$type<ChecklistItem[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
   status: todoStatusEnum("status").notNull().default("open"),
   priority: todoPriorityEnum("priority").notNull().default("medium"),
+  // Manual rank within a board column (fractional, so a drop between two cards
+  // only rewrites the moved card). Null = never ranked → falls back to the
+  // default priority/due-date order, after ranked cards.
+  sortOrder: doublePrecision("sort_order"),
   dueDate: date("due_date"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

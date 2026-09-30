@@ -2,280 +2,179 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { toast } from "sonner";
-import { Search, Calendar, ListChecks, Link2, Paperclip, ExternalLink, Plus, StickyNote } from "lucide-react";
-import type { TodoWithProject } from "@/utils/projects";
+import { useRouter } from "next/navigation";
+import { Check, ChevronDown, ChevronRight } from "lucide-react";
+import { cn } from "@/utils";
 import {
-  ProjectIconDisplay,
+  STATUS_COLOR,
   STATUS_LABELS,
-  STATUS_STYLE,
-  todoProgress,
+  STATUS_ORDER,
+  PriorityIcon,
+  compareBoard,
+  compareByPriority,
+  type TaskItem,
   type TodoStatusKey,
 } from "@/utils/projects-helpers";
-import { cn } from "@/utils";
-import TodoDetailModal from "@/components/projects/TodoDetailModal";
+import { isTempId, useTasks } from "./TaskProvider";
+import { ChecklistBar, DueChip, ProjectChip, StatusSelect, TaskMeta } from "./TaskBits";
+import { useToday } from "./useToday";
 
-const PRIORITY_STYLE: Record<string, string> = {
-  high: "bg-truffle text-palladian",
-  medium: "bg-blue-fantastic text-palladian",
-  low: "bg-muted text-foreground",
+export type ListSort = "priority" | "due" | "newest" | "rank";
+
+export const LIST_SORTS: { key: ListSort; label: string }[] = [
+  { key: "priority", label: "Priority" },
+  { key: "due", label: "Due date" },
+  { key: "newest", label: "Newest" },
+  { key: "rank", label: "Board order" },
+];
+
+const SORTERS: Record<ListSort, (a: TaskItem, b: TaskItem) => number> = {
+  priority: compareByPriority,
+  due: (a, b) => {
+    if (a.dueDate && b.dueDate && a.dueDate !== b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate && !b.dueDate) return -1;
+    if (b.dueDate && !a.dueDate) return 1;
+    return compareByPriority(a, b);
+  },
+  newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
+  rank: compareBoard,
 };
 
-const ACTIVE: TodoStatusKey[] = ["open", "in_progress", "on_hold"];
-type StatusScope = "active" | "all" | "done";
-type PriorityScope = "all" | "high" | "medium" | "low";
+export default function TaskListView({
+  tasks,
+  showProject,
+  sort,
+  emptyHint,
+}: {
+  tasks: TaskItem[];
+  showProject: boolean;
+  sort: ListSort;
+  emptyHint: string;
+}) {
+  const [open, setOpen] = useState<Record<TodoStatusKey, boolean>>({
+    open: true,
+    in_progress: true,
+    on_hold: true,
+    done: false,
+    cancelled: false,
+  });
 
-const TODAY = new Date().toISOString().slice(0, 10);
+  const groups = useMemo(() => {
+    const by: Record<TodoStatusKey, TaskItem[]> = { open: [], in_progress: [], on_hold: [], done: [], cancelled: [] };
+    for (const t of tasks) by[t.status as TodoStatusKey]?.push(t);
+    for (const s of STATUS_ORDER) by[s].sort(SORTERS[sort]);
+    return by;
+  }, [tasks, sort]);
 
-export default function TaskListView({ todos }: { todos: TodoWithProject[] }) {
-  const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [statusScope, setStatusScope] = useState<StatusScope>("active");
-  const [priorityScope, setPriorityScope] = useState<PriorityScope>("all");
-  const [projectId, setProjectId] = useState<string | "all" | "none">("all");
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [quickTitle, setQuickTitle] = useState("");
-  const [adding, setAdding] = useState(false);
-
-  const projects = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; icon: string }>();
-    for (const t of todos) {
-      if (t.projectId && t.projectName && !map.has(t.projectId)) {
-        map.set(t.projectId, { id: t.projectId, name: t.projectName, icon: t.projectIcon ?? "folder" });
-      }
-    }
-    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [todos]);
-
-  const hasStandalone = useMemo(() => todos.some((t) => !t.projectId), [todos]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return todos.filter((t) => {
-      if (q && !t.title.toLowerCase().includes(q) && !(t.projectName ?? "").toLowerCase().includes(q)) return false;
-      if (projectId === "none" && t.projectId) return false;
-      if (projectId !== "all" && projectId !== "none" && t.projectId !== projectId) return false;
-      if (priorityScope !== "all" && t.priority !== priorityScope) return false;
-      if (statusScope === "active" && !ACTIVE.includes(t.status as TodoStatusKey)) return false;
-      if (statusScope === "done" && t.status !== "done") return false;
-      return true;
-    });
-  }, [todos, query, projectId, priorityScope, statusScope]);
-
-  const openTodo = openId ? todos.find((t) => t.id === openId) ?? null : null;
-
-  async function handleQuickAdd(e: React.FormEvent) {
-    e.preventDefault();
-    const title = quickTitle.trim();
-    if (!title) return;
-    setAdding(true);
-    try {
-      const res = await fetch("/api/todos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error);
-      }
-      setQuickTitle("");
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "failed to add task");
-    } finally {
-      setAdding(false);
-    }
+  if (tasks.length === 0) {
+    return <p className="font-mono text-sm text-muted-foreground text-center p-10">{emptyHint}</p>;
   }
 
   return (
-    <div className="pixel-box bg-card overflow-hidden">
-      {/* Quick add — a note with no project, for "deal with this later" items */}
-      <form onSubmit={handleQuickAdd} className="flex items-center gap-2 p-3 border-b border-border bg-background/40">
-        <input
-          value={quickTitle}
-          onChange={(e) => setQuickTitle(e.target.value)}
-          placeholder="Quick note — no project needed, hit enter..."
-          className="flex-1 pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-burning-flame placeholder:text-muted-foreground"
-        />
-        <button
-          type="submit"
-          disabled={adding || !quickTitle.trim()}
-          aria-label="Add task"
-          className="pixel-btn bg-burning-flame text-abyssal p-2.5 disabled:opacity-50 shrink-0"
-        >
-          <Plus size={14} strokeWidth={3} />
-        </button>
-      </form>
-
-      {/* Filters */}
-      <div className="p-3 border-b border-border space-y-2">
-        <div className="flex items-center gap-2 pixel-inset bg-background px-2 py-1.5">
-          <Search size={12} className="text-muted-foreground shrink-0" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="search tasks or projects..."
-            className="w-full bg-transparent font-mono text-xs focus:outline-none placeholder:text-muted-foreground"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(["active", "all", "done"] as StatusScope[]).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStatusScope(s)}
-              className={cn(
-                "pixel-tag border-abyssal transition-colors",
-                statusScope === s ? "bg-burning-flame text-abyssal" : "bg-muted text-foreground hover:bg-oatmeal"
-              )}
-              style={{ fontSize: "7px" }}
-            >
-              {s.toUpperCase()}
-            </button>
-          ))}
-          <span className="w-px h-4 bg-border mx-1" />
-          {(["all", "high", "medium", "low"] as PriorityScope[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPriorityScope(p)}
-              className={cn(
-                "pixel-tag border-abyssal transition-colors",
-                priorityScope === p ? "bg-burning-flame text-abyssal" : "bg-muted text-foreground hover:bg-oatmeal"
-              )}
-              style={{ fontSize: "7px" }}
-            >
-              {p.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
-        {(projects.length > 1 || (projects.length >= 1 && hasStandalone)) && (
-          <div className="flex flex-wrap items-center gap-1.5">
+    <div>
+      {STATUS_ORDER.map((status) => {
+        const items = groups[status];
+        if (items.length === 0) return null;
+        const color = STATUS_COLOR[status];
+        const expanded = open[status];
+        return (
+          <section key={status} className="border-b border-border last:border-b-0">
             <button
               type="button"
-              onClick={() => setProjectId("all")}
+              onClick={() => setOpen((o) => ({ ...o, [status]: !o[status] }))}
+              aria-expanded={expanded}
               className={cn(
-                "pixel-tag border-abyssal transition-colors",
-                projectId === "all" ? "bg-blue-fantastic text-palladian" : "bg-muted text-foreground hover:bg-oatmeal"
+                "w-full flex items-center gap-2.5 px-3 py-2.5 text-left border-l-4 hover:brightness-95 transition",
+                color.tint,
+                color.edge
               )}
-              style={{ fontSize: "7px" }}
             >
-              ALL PROJECTS
+              {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+              <span className={cn("w-2.5 h-2.5", color.dot)} />
+              <span className="font-pixel" style={{ fontSize: "10px" }}>
+                {STATUS_LABELS[status]}
+              </span>
+              <span className="font-mono text-xs text-muted-foreground tabular-nums">{items.length}</span>
             </button>
-            {projects.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setProjectId(p.id)}
-                className={cn(
-                  "pixel-tag border-abyssal transition-colors inline-flex items-center gap-1",
-                  projectId === p.id ? "bg-blue-fantastic text-palladian" : "bg-muted text-foreground hover:bg-oatmeal"
-                )}
-                style={{ fontSize: "7px" }}
-              >
-                <ProjectIconDisplay icon={p.icon} size={9} /> {p.name}
-              </button>
-            ))}
-            {hasStandalone && (
-              <button
-                type="button"
-                onClick={() => setProjectId("none")}
-                className={cn(
-                  "pixel-tag border-abyssal transition-colors inline-flex items-center gap-1",
-                  projectId === "none" ? "bg-blue-fantastic text-palladian" : "bg-muted text-foreground hover:bg-oatmeal"
-                )}
-                style={{ fontSize: "7px" }}
-              >
-                <StickyNote size={9} /> NO PROJECT
-              </button>
+            {expanded && (
+              <ul>
+                {items.map((t) => (
+                  <TaskRow key={t.id} task={t} showProject={showProject} />
+                ))}
+              </ul>
             )}
-          </div>
-        )}
-      </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
-      {/* Rows — a responsive card grid so the page fills the width nicely */}
-      {filtered.length === 0 ? (
-        <p className="font-mono text-xs text-muted-foreground text-center p-8">
-          {todos.length === 0 ? "no tasks yet — add a quick note above or create one inside a project" : "no tasks match these filters"}
-        </p>
-      ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-2 gap-2 p-2">
-          {filtered.map((todo) => {
-            const isDone = todo.status === "done";
-            const checklist = todo.checklist ?? [];
-            const overdue = !isDone && todo.status !== "cancelled" && todo.dueDate != null && todo.dueDate < TODAY;
-            return (
-              <button
-                key={todo.id}
-                type="button"
-                onClick={() => setOpenId(todo.id)}
-                className={cn(
-                  "text-left border-2 border-abyssal bg-background p-3 flex flex-col gap-1.5 transition-colors hover:bg-muted/40",
-                  isDone && "opacity-60"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  {todo.projectName ? (
-                    <>
-                      <ProjectIconDisplay icon={todo.projectIcon ?? "folder"} size={11} className="text-muted-foreground shrink-0" />
-                      <span className="font-mono text-xs text-muted-foreground truncate">{todo.projectName}</span>
-                    </>
-                  ) : (
-                    <>
-                      <StickyNote size={11} className="text-muted-foreground shrink-0" />
-                      <span className="font-mono text-xs text-muted-foreground truncate italic">no project</span>
-                    </>
-                  )}
-                </div>
-                <p className={cn("font-mono text-sm leading-snug", isDone && "line-through text-muted-foreground")}>{todo.title}</p>
-                <div className="flex items-center gap-2 flex-wrap mt-auto pt-1">
-                  {todo.status !== "open" && (
-                    <span className={cn("pixel-tag border-abyssal", STATUS_STYLE[todo.status])} style={{ fontSize: "6px" }}>
-                      {STATUS_LABELS[todo.status]}
-                    </span>
-                  )}
-                  <span className={cn("pixel-tag border-abyssal", PRIORITY_STYLE[todo.priority])} style={{ fontSize: "6px" }}>
-                    {todo.priority.toUpperCase()}
-                  </span>
-                  {todo.dueDate && (
-                    <span className={cn("flex items-center gap-1 font-mono text-xs", overdue ? "text-truffle" : "text-muted-foreground")}>
-                      <Calendar size={9} /> {todo.dueDate}{overdue ? " · overdue" : ""}
-                    </span>
-                  )}
-                  {checklist.length > 0 && (
-                    <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
-                      <ListChecks size={9} /> {checklist.filter((c) => c.done).length}/{checklist.length}
-                    </span>
-                  )}
-                  {todo.link && <Link2 size={10} className="text-muted-foreground" aria-label="has link" />}
-                  {todo.imageUrl && <Paperclip size={10} className="text-muted-foreground" aria-label="has image" />}
-                </div>
-                {checklist.length > 0 && (
-                  <div className="h-1 bg-muted border border-border overflow-hidden">
-                    <div
-                      className={cn("h-full", todoProgress(todo) >= 100 ? "bg-burning-flame" : "bg-blue-fantastic")}
-                      style={{ width: `${todoProgress(todo)}%` }}
-                    />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+function TaskRow({ task, showProject }: { task: TaskItem; showProject: boolean }) {
+  const router = useRouter();
+  const { updateTask } = useTasks();
+  const today = useToday();
+  const temp = isTempId(task.id);
+  const isDone = task.status === "done";
+  const closed = isDone || task.status === "cancelled";
+  const href = `/tasks/${task.id}`;
+
+  return (
+    <li
+      className={cn(
+        "relative group flex items-start sm:items-center gap-3 px-3 py-3 border-t border-border hover:bg-muted/40 transition-colors",
+        temp && "opacity-60"
+      )}
+      onMouseEnter={() => !temp && router.prefetch(href)}
+    >
+      {/* Stretched link — the whole row opens the task; the controls below sit
+          above it (relative z-10) so they keep their own clicks. */}
+      {!temp && (
+        <Link href={href} prefetch={false} aria-label={`open task: ${task.title}`} className="absolute inset-0" />
       )}
 
-      <div className="px-3 py-2 border-t border-border">
-        <Link href="/projects" className="font-pixel text-muted-foreground hover:text-burning-flame transition-colors inline-flex items-center gap-1" style={{ fontSize: "7px" }}>
-          MANAGE PROJECTS <ExternalLink size={9} />
-        </Link>
+      <button
+        type="button"
+        disabled={temp}
+        onClick={() => updateTask(task.id, { status: isDone ? "open" : "done" })}
+        aria-label={isDone ? "reopen task" : "mark task done"}
+        className={cn(
+          "relative z-10 shrink-0 w-6 h-6 mt-0.5 sm:mt-0 border-2 border-abyssal flex items-center justify-center transition-colors",
+          isDone ? "bg-status-done text-white" : "bg-background hover:bg-status-done/15"
+        )}
+      >
+        {isDone && <Check size={14} strokeWidth={3} />}
+      </button>
+
+      <PriorityIcon priority={task.priority} size={16} className="hidden sm:block" />
+
+      <div className="flex-1 min-w-0">
+        <p className={cn("font-mono text-sm leading-snug break-words", closed && "line-through text-muted-foreground")}>
+          {task.title}
+        </p>
+        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-1">
+          <PriorityIcon priority={task.priority} size={14} className="sm:hidden" />
+          {showProject && <ProjectChip name={task.projectName} icon={task.projectIcon} className="max-w-[200px]" />}
+          <DueChip dueDate={task.dueDate} status={task.status} today={today} className="md:hidden" />
+          <TaskMeta task={task} />
+        </div>
+        {task.checklist.length > 0 && <ChecklistBar task={task} className="mt-1.5 max-w-[240px]" />}
       </div>
 
-      {openTodo && <TodoDetailModal todo={openTodo} onClose={() => setOpenId(null)} />}
-    </div>
+      <DueChip
+        dueDate={task.dueDate}
+        status={task.status}
+        today={today}
+        className="hidden md:inline-flex w-28 justify-end shrink-0"
+      />
+
+      <StatusSelect
+        value={task.status}
+        disabled={temp}
+        onChange={(status) => updateTask(task.id, { status })}
+        className="relative z-10 shrink-0"
+      />
+    </li>
   );
 }

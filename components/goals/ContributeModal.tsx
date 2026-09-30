@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/goals/ContributeModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { X, ArrowDownCircle, ArrowUpCircle, Wallet, AlertTriangle } from "lucide-react";
-import { centsToDisplay } from "@/utils";
+import { ArrowDownCircle, ArrowUpCircle, Wallet, AlertTriangle } from "lucide-react";
+import { centsToDisplay, todayISO } from "@/utils";
 import { calcProgress } from "@/utils/goals-helpers";
 import type { SavingsGoal } from "@/db/schema/goals";
 import RupiahInput from "@/components/ui/RupiahInput";
+import Modal from "@/components/ui/Modal";
 
 interface Props {
   goal: SavingsGoal;
@@ -31,11 +31,14 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
   const [amount, setAmount] = useState(0);
   const [note, setNote] = useState("");
   const [transactionId, setTransactionId] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayISO);
 
   useEffect(() => {
     fetch("/api/balance")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((data) => setBalance(data))
       .catch(() => toast.error("couldn't load balance"))
       .finally(() => setBalanceLoading(false));
@@ -62,7 +65,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
     }
     setLoading(true);
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         amount: mode === "deposit" ? amount : -amount,
         contributedAt: date,
         note: note || undefined,
@@ -75,39 +78,37 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "failed to save");
+      }
       const updated = await res.json();
       if (updated.status === "completed") toast.success("🎉 Goal reached! Congratulations!");
       else toast.success(mode === "deposit" ? "contribution saved!" : "withdrawal recorded");
       onSuccess();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to save");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <Modal
+      open
+      onClose={onClose}
+      headerClassName={`${mode === "deposit" ? "bg-abyssal" : "bg-truffle"} text-palladian`}
+      title={
+        <span className="flex items-center gap-2 min-w-0">
+          {mode === "deposit" ? (
+            <ArrowDownCircle size={14} className="text-burning-flame shrink-0" />
+          ) : (
+            <ArrowUpCircle size={14} className="shrink-0" />
+          )}
+          <span className="truncate">{goal.name}</span>
+        </span>
+      }
     >
-      <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[90dvh] overflow-y-auto">
-        {/* Header */}
-        <div className={`px-4 py-3 flex items-center justify-between sticky top-0 ${
-          mode === "deposit" ? "bg-abyssal" : "bg-truffle"
-        } text-palladian`}>
-          <div className="flex items-center gap-2">
-            {mode === "deposit"
-              ? <ArrowDownCircle size={14} className="text-burning-flame" />
-              : <ArrowUpCircle size={14} />}
-            <span className="font-pixel text-xs">{goal.name}</span>
-          </div>
-          <button onClick={onClose} className="text-oatmeal hover:text-burning-flame transition-colors">
-            <X size={14} />
-          </button>
-        </div>
-
         {/* Balance panel */}
         <div className="px-4 pt-4 pb-2">
           <div className={`pixel-box-sm p-3 ${
@@ -116,19 +117,19 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
             : "bg-truffle/20"
           }`}>
             {balanceLoading ? (
-              <p className="font-pixel text-muted-foreground animate-pixel-blink" style={{ fontSize: "8px" }}>
+              <p className="font-pixel text-muted-foreground animate-pixel-blink" style={{ fontSize: "10px" }}>
                 loading balance...
               </p>
             ) : balance ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Wallet size={14} className={balance.freeBalance > 0 ? "text-burning-flame shrink-0" : "text-truffle shrink-0"} />
-                  <p className={`font-pixel ${balance.freeBalance > 0 ? "text-palladian" : "text-abyssal"}`} style={{ fontSize: "8px" }}>
+                  <p className={`font-pixel ${balance.freeBalance > 0 ? "text-palladian" : "text-abyssal"}`} style={{ fontSize: "10px" }}>
                     AVAILABLE BALANCE
                   </p>
                 </div>
                 <p className={`font-pixel ${balance.freeBalance > 0 ? "text-burning-flame" : "text-truffle"}`}
-                  style={{ fontSize: "12px" }}>
+                  style={{ fontSize: "14px" }}>
                   {centsToDisplay(balance.freeBalance)}
                 </p>
               </div>
@@ -144,7 +145,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
             <span className="font-mono text-xs text-muted-foreground">
               {centsToDisplay(goal.currentAmount)} / {centsToDisplay(goal.targetAmount)}
             </span>
-            <span className="font-pixel text-muted-foreground" style={{ fontSize: "8px" }}>
+            <span className="font-pixel text-muted-foreground" style={{ fontSize: "10px" }}>
               {currentProgress}%{amount > 0 ? ` → ${progressAfter}%` : ""}
             </span>
           </div>
@@ -183,7 +184,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
                     ? m === "deposit" ? "bg-burning-flame text-abyssal" : "bg-truffle text-palladian"
                     : "bg-background text-muted-foreground hover:bg-muted"
                 }`}
-                style={{ fontSize: "8px" }}
+                style={{ fontSize: "10px" }}
               >
                 {m === "deposit"
                   ? <><ArrowDownCircle size={10} /> DEPOSIT</>
@@ -195,7 +196,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
           {/* Quick fill — deposit only */}
           {mode === "deposit" && (
             <div>
-              <p className="font-pixel mb-2" style={{ fontSize: "7px" }}>QUICK FILL</p>
+              <p className="font-pixel mb-2" style={{ fontSize: "9px" }}>QUICK FILL</p>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { label: "25% of balance",   val: Math.floor(maxDeposit * 0.25) },
@@ -220,10 +221,10 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
                             : "bg-muted hover:bg-blue-fantastic hover:text-palladian"
                           }`}
                       >
-                        <span className="block text-current opacity-70" style={{ fontSize: "9px" }}>
+                        <span className="block text-current opacity-70" style={{ fontSize: "11px" }}>
                           {label}
                         </span>
-                        <span className="block font-pixel" style={{ fontSize: "8px" }}>
+                        <span className="block font-pixel" style={{ fontSize: "10px" }}>
                           {centsToDisplay(capped)}
                         </span>
                       </button>
@@ -236,7 +237,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
           {/* Withdraw quick fill */}
           {mode === "withdraw" && goal.currentAmount > 0 && (
             <div>
-              <p className="font-pixel mb-2" style={{ fontSize: "7px" }}>QUICK WITHDRAW</p>
+              <p className="font-pixel mb-2" style={{ fontSize: "9px" }}>QUICK WITHDRAW</p>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { label: "25%", val: Math.floor(goal.currentAmount * 0.25) },
@@ -255,8 +256,8 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
                           : "bg-muted hover:bg-truffle hover:text-palladian"
                         }`}
                     >
-                      <span className="block opacity-70" style={{ fontSize: "9px" }}>{label}</span>
-                      <span className="block font-pixel" style={{ fontSize: "8px" }}>{centsToDisplay(val)}</span>
+                      <span className="block opacity-70" style={{ fontSize: "11px" }}>{label}</span>
+                      <span className="block font-pixel" style={{ fontSize: "10px" }}>{centsToDisplay(val)}</span>
                     </button>
                   ))}
               </div>
@@ -287,12 +288,12 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
 
           {/* Date */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>DATE</label>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>DATE</label>
             <input
               type="date"
               required
               value={date}
-              max={new Date().toISOString().slice(0, 10)}
+              max={todayISO()}
               onChange={(e) => setDate(e.target.value)}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
             />
@@ -300,7 +301,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
 
           {/* Note */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
               NOTE <span className="text-muted-foreground">(optional)</span>
             </label>
             <input
@@ -314,7 +315,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
 
           {/* Manual transaction link */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
               LINK EXISTING TRANSACTION <span className="text-muted-foreground">(optional — leave blank to auto-create)</span>
             </label>
             <input
@@ -332,7 +333,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
             className={`w-full pixel-btn font-pixel py-3 disabled:opacity-60 transition-colors ${
               mode === "deposit" ? "bg-burning-flame text-abyssal" : "bg-truffle text-palladian"
             }`}
-            style={{ fontSize: "9px" }}
+            style={{ fontSize: "11px" }}
           >
             {loading
               ? "SAVING..."
@@ -341,7 +342,6 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
               : `► WITHDRAW ${amount > 0 ? centsToDisplay(amount) : ""} FROM GOAL`}
           </button>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

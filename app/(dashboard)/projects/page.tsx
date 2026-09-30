@@ -40,7 +40,7 @@ export default async function ProjectsPage() {
       {/* Active projects */}
       {active.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
+          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "10px" }}>
             ▶ ACTIVE ({active.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -54,7 +54,7 @@ export default async function ProjectsPage() {
       {/* Completed projects */}
       {completed.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
+          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "10px" }}>
             ✓ COMPLETED ({completed.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -68,7 +68,7 @@ export default async function ProjectsPage() {
       {/* Archived projects */}
       {archived.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "8px" }}>
+          <h2 className="font-pixel text-xs text-muted-foreground" style={{ fontSize: "10px" }}>
             ARCHIVED ({archived.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

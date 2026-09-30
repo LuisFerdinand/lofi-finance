@@ -99,56 +99,94 @@ export async function updateGoal(
   userId: string,
   data: Partial<{
     name: string;
-    notes: string;
+    notes: string | null;
     icon: GoalIcon;
     targetAmount: number;
-    deadline: string;
+    deadline: string | null;
     status: "active" | "completed" | "cancelled";
     isPinned: boolean;
   }>
-): Promise<SavingsGoal> {
+): Promise<SavingsGoal | null> {
   const [goal] = await db
     .update(savings_goals)
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(savings_goals.id, id), eq(savings_goals.userId, userId)))
     .returning();
-  return goal;
+  return goal ?? null;
 }
 
-export async function deleteGoal(id: string, userId: string): Promise<void> {
-  await db
+export async function deleteGoal(id: string, userId: string): Promise<boolean> {
+  const rows = await db
     .delete(savings_goals)
-    .where(and(eq(savings_goals.id, id), eq(savings_goals.userId, userId)));
+    .where(and(eq(savings_goals.id, id), eq(savings_goals.userId, userId)))
+    .returning({ id: savings_goals.id });
+  return rows.length > 0;
 }
 
-export async function addContribution(data: {
-  goalId: string;
+/**
+ * Record a deposit (amount > 0) or withdrawal (amount < 0) against a goal.
+ * Unless an existing transaction is linked, a matching transaction is created
+ * too (deposit → expense, withdrawal → income) so the balance reflects it.
+ *
+ * All writes go in one batch, which Neon runs as a single transaction — before,
+ * a failure after the first insert could debit the balance without ever
+ * moving the goal.
+ */
+export async function contributeToGoal(data: {
+  goal: SavingsGoal;
   userId: string;
   amount: number;
   note?: string;
   contributedAt: string;
   transactionId?: string;
-}): Promise<SavingsGoal> {
-  await db.insert(goal_contributions).values(data);
-  const [updated] = await db
+}): Promise<SavingsGoal | null> {
+  const { goal, userId, amount, note, contributedAt } = data;
+  const transactionId = data.transactionId ?? crypto.randomUUID();
+
+  const insertContribution = db.insert(goal_contributions).values({
+    goalId: goal.id,
+    userId,
+    amount,
+    note,
+    contributedAt,
+    transactionId,
+  });
+  const updateGoal = db
     .update(savings_goals)
     .set({
-      currentAmount: sql`${savings_goals.currentAmount} + ${data.amount}`,
-      status: sql`CASE WHEN ${savings_goals.currentAmount} + ${data.amount} >= ${savings_goals.targetAmount} THEN 'completed'::goal_status ELSE ${savings_goals.status} END`,
+      currentAmount: sql`${savings_goals.currentAmount} + ${amount}`,
+      status: sql`CASE WHEN ${savings_goals.currentAmount} + ${amount} >= ${savings_goals.targetAmount} THEN 'completed'::goal_status ELSE ${savings_goals.status} END`,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(savings_goals.id, data.goalId),
-        eq(savings_goals.userId, data.userId)
-      )
-    )
+    .where(and(eq(savings_goals.id, goal.id), eq(savings_goals.userId, userId)))
     .returning();
-  return updated;
+
+  if (data.transactionId) {
+    const [, updated] = await db.batch([insertContribution, updateGoal]);
+    return updated[0] ?? null;
+  }
+
+  const isDeposit = amount > 0;
+  const [, , updated] = await db.batch([
+    db.insert(transactions).values({
+      id: transactionId,
+      userId,
+      type: isDeposit ? "expense" : "income",
+      category: isDeposit ? "other_expense" : "other_income",
+      amount: Math.abs(amount),
+      description: isDeposit ? `Savings: ${goal.name}` : `Withdrawal from: ${goal.name}`,
+      note,
+      transactionDate: contributedAt,
+    }),
+    insertContribution,
+    updateGoal,
+  ]);
+  return updated[0] ?? null;
 }
 
-export async function getGoalsSummary(userId: string) {
-  const goals = await getGoals(userId);
+/** Totals for the goals page header. Pass already-loaded goals to skip a query. */
+export async function getGoalsSummary(userId: string, loaded?: SavingsGoal[]) {
+  const goals = loaded ?? (await getGoals(userId));
   const active = goals.filter((g) => g.status === "active");
   const completed = goals.filter((g) => g.status === "completed");
   const totalSaved = goals.reduce((acc, g) => acc + g.currentAmount, 0);

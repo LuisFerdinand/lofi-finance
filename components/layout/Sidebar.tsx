@@ -85,7 +85,7 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
           return (
             <div key={group.label} className="space-y-1">
               {!collapsed && (
-                <p className="font-pixel text-blue-fantastic px-3 mb-1" style={{ fontSize: "7px" }}>
+                <p className="font-pixel text-blue-fantastic px-3 mb-1" style={{ fontSize: "9px" }}>
                   {group.label}
                 </p>
               )}
@@ -120,7 +120,7 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
       {/* Version footer */}
       <div className={cn("p-4 border-t-2 border-blue-fantastic shrink-0", collapsed && "px-2 text-center")}>
         {collapsed ? (
-          <p className="font-pixel text-blue-fantastic" style={{ fontSize: "7px" }}>v{APP_VERSION}</p>
+          <p className="font-pixel text-blue-fantastic" style={{ fontSize: "9px" }}>v{APP_VERSION}</p>
         ) : (
           <>
             <p className="font-pixel text-xs text-blue-fantastic">v{APP_VERSION}</p>

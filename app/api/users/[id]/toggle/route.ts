@@ -16,6 +16,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Cannot deactivate your own account" }, { status: 400 });
     }
     const user = await toggleUserActive(id);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
     return NextResponse.json(user);
   } catch {
     return NextResponse.json({ error: "Failed to toggle status" }, { status: 500 });

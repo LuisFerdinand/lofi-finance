@@ -5,8 +5,8 @@ import { getProjectById, updateProject, deleteProject } from "@/utils/projects";
 import { z } from "zod";
 
 const updateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  description: z.string().max(500).nullable().optional(),
+  name: z.string().trim().min(1).max(100).optional(),
+  description: z.string().trim().max(500).nullable().optional(),
   icon: z.string().min(1).max(30).optional(),
   status: z.enum(["active", "completed", "archived"]).optional(),
   isPinned: z.boolean().optional(),
@@ -34,9 +34,12 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await req.json();
-    const data = updateSchema.parse(body);
-    const project = await updateProject(id, session.user.id, data);
+    const data = updateSchema.parse(await req.json());
+    const project = await updateProject(id, session.user.id, {
+      ...data,
+      ...(data.description !== undefined ? { description: data.description || null } : {}),
+    });
+    if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(project);
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
@@ -52,6 +55,7 @@ export async function DELETE(
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await deleteProject(id, session.user.id);
+  const deleted = await deleteProject(id, session.user.id);
+  if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

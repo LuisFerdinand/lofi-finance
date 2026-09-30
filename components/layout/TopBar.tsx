@@ -44,7 +44,7 @@ export default function TopBar({ user }: TopBarProps) {
         >
           {/* Avatar */}
           <div className="w-6 h-6 bg-burning-flame flex items-center justify-center border border-abyssal">
-            <span className="font-pixel text-abyssal" style={{ fontSize: "6px" }}>
+            <span className="font-pixel text-abyssal" style={{ fontSize: "8px" }}>
               {getInitials(user.name ?? "U")}
             </span>
           </div>

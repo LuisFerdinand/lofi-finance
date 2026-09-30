@@ -50,14 +50,16 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
-            { key: "name", label: "NAME", type: "text", placeholder: "Your name" },
-            { key: "email", label: "EMAIL", type: "email", placeholder: "you@example.com" },
-            { key: "password", label: "PASSWORD", type: "password", placeholder: "min 8 characters" },
-            { key: "confirm", label: "CONFIRM", type: "password", placeholder: "repeat password" },
-          ].map(({ key, label, type, placeholder }) => (
+            { key: "name", label: "NAME", type: "text", placeholder: "Your name", auto: "name" },
+            { key: "email", label: "EMAIL", type: "email", placeholder: "you@example.com", auto: "email" },
+            { key: "password", label: "PASSWORD", type: "password", placeholder: "min 8 characters", auto: "new-password" },
+            { key: "confirm", label: "CONFIRM", type: "password", placeholder: "repeat password", auto: "new-password" },
+          ].map(({ key, label, type, placeholder, auto }) => (
             <div key={key}>
-              <label className="font-pixel text-xs block mb-2">{label}</label>
+              <label htmlFor={`register-${key}`} className="font-pixel text-xs block mb-2">{label}</label>
               <input
+                id={`register-${key}`}
+                autoComplete={auto}
                 type={type}
                 required
                 value={form[key as keyof typeof form]}
@@ -80,7 +82,7 @@ export default function RegisterPage() {
         <div className="mt-4 text-center">
           <p className="font-mono text-xs text-muted-foreground">
             have an account?{" "}
-            <Link href="/login" className="text-burning-flame underline hover:text-truffle">
+            <Link href="/login" className="text-burning-flame-ink underline hover:text-truffle">
               sign in
             </Link>
           </p>

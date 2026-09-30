@@ -4,8 +4,8 @@ import { z } from "zod";
 
 const registerSchema = z.object({
   name: z.string().min(2).max(100),
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(8).max(200),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
+    }
+    // Two sign-ups racing past the existence check above.
+    if ((err as { code?: string } | null)?.code === "23505") {
+      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }

@@ -33,6 +33,28 @@ export function centsToDollars(cents: number): number {
 
 // ─── Date ───────────────────────────────────────────────────────────────────
 
+/**
+ * Today as "yyyy-MM-dd" in the *local* timezone. Use this instead of
+ * `new Date().toISOString().slice(0, 10)`, which is the UTC date — for a
+ * user in WIB (UTC+7) that's still yesterday until 07:00.
+ */
+export function todayISO(): string {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
+/**
+ * Today as "yyyy-MM-dd" in a given IANA timezone — for server code, which runs
+ * in UTC and can't know the viewer's zone. Defaults to the app's home zone.
+ */
+export function todayInTimeZone(timeZone = "Asia/Jakarta"): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 export function formatDate(date: string | Date): string {
   const d = typeof date === "string" ? parseISO(date) : date;
   return format(d, "MMM d, yyyy");

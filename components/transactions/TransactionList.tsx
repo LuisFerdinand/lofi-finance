@@ -72,7 +72,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
         {/* Desktop header */}
         <div className="hidden md:grid md:grid-cols-[64px_1fr_160px_110px_180px_80px] gap-3 px-4 py-2 bg-abyssal text-palladian">
           {["TYPE", "DESCRIPTION", "CATEGORY", "DATE", "AMOUNT", ""].map((h) => (
-            <p key={h} className="font-pixel text-palladian" style={{ fontSize: "7px" }}>{h}</p>
+            <p key={h} className="font-pixel text-palladian" style={{ fontSize: "9px" }}>{h}</p>
           ))}
         </div>
 
@@ -92,7 +92,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
                     ? "bg-burning-flame text-abyssal border-abyssal"
                     : "bg-truffle text-palladian border-abyssal"
                 }`}
-                style={{ fontSize: "7px" }}
+                style={{ fontSize: "9px" }}
               >
                 {tx.type === "income" ? "▲ IN" : "▼ OUT"}
               </span>
@@ -108,9 +108,9 @@ export default function TransactionList({ transactions, total, page, totalPages 
 
             {/* Category */}
             <div className="flex items-center gap-1.5">
-              <CategoryIconDisplay category={tx.category as any} size={14} className="shrink-0 text-muted-foreground" />
+              <CategoryIconDisplay category={tx.category} size={14} className="shrink-0 text-muted-foreground" />
               <span className="font-mono text-xs text-muted-foreground truncate">
-                {getCategoryLabel(tx.category as any)}
+                {getCategoryLabel(tx.category)}
               </span>
             </div>
 
@@ -127,7 +127,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
                 className={`font-pixel leading-none ${
                   tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
-                style={{ fontSize: "11px" }}
+                style={{ fontSize: "13px" }}
               >
                 {tx.type === "income" ? "+" : "−"}
               </span>
@@ -135,18 +135,19 @@ export default function TransactionList({ transactions, total, page, totalPages 
                 className={`font-pixel break-all ${
                   tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
-                style={{ fontSize: "11px" }}
+                style={{ fontSize: "13px" }}
               >
                 {centsToDisplay(tx.amount)}
               </span>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+            <div className="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
               <button
                 onClick={() => setEditing(tx)}
                 className="pixel-btn p-1.5 bg-muted text-foreground hover:bg-blue-fantastic hover:text-palladian transition-colors"
                 title="edit"
+                aria-label={`edit ${tx.description}`}
               >
                 <Pencil size={12} />
               </button>
@@ -154,6 +155,7 @@ export default function TransactionList({ transactions, total, page, totalPages 
                 onClick={() => handleDelete(tx.id)}
                 className="pixel-btn p-1.5 bg-muted text-truffle hover:bg-truffle hover:text-palladian transition-colors"
                 title="delete"
+                aria-label={`delete ${tx.description}`}
               >
                 <Trash2 size={12} />
               </button>
@@ -169,10 +171,10 @@ export default function TransactionList({ transactions, total, page, totalPages 
             {total} total · page {page}/{totalPages}
           </p>
           <div className="flex gap-2">
-            <button onClick={() => changePage(page - 1)} disabled={page <= 1} className="pixel-btn bg-card p-2 disabled:opacity-40">
+            <button onClick={() => changePage(page - 1)} disabled={page <= 1} aria-label="previous page" className="pixel-btn bg-card p-2 disabled:opacity-40">
               <ChevronLeft size={14} />
             </button>
-            <button onClick={() => changePage(page + 1)} disabled={page >= totalPages} className="pixel-btn bg-card p-2 disabled:opacity-40">
+            <button onClick={() => changePage(page + 1)} disabled={page >= totalPages} aria-label="next page" className="pixel-btn bg-card p-2 disabled:opacity-40">
               <ChevronRight size={14} />
             </button>
           </div>

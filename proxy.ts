@@ -1,23 +1,27 @@
+// proxy.ts — Next 16's name for middleware (the `middleware` file convention
+// is deprecated). Runs on the Node.js runtime before every page request.
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 const PUBLIC_ROUTES = ["/login", "/register"];
 const ADMIN_ROUTES = ["/admin"];
 
-export default auth((req) => {
+// "/admin" and "/admin/…" — but not "/administrator".
+const matches = (pathname: string, route: string) =>
+  pathname === route || pathname.startsWith(`${route}/`);
+
+export default auth(function proxy(req) {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session?.user;
-  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-    nextUrl.pathname.startsWith(route)
-  );
-  const isAdminRoute = ADMIN_ROUTES.some((route) =>
-    nextUrl.pathname.startsWith(route)
-  );
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => matches(nextUrl.pathname, route));
+  const isAdminRoute = ADMIN_ROUTES.some((route) => matches(nextUrl.pathname, route));
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to login, remembering where they were going
   if (!isLoggedIn && !isPublicRoute) {
     const redirectUrl = new URL("/login", nextUrl.origin);
-    redirectUrl.searchParams.set("callbackUrl", nextUrl.pathname);
+    if (nextUrl.pathname !== "/") {
+      redirectUrl.searchParams.set("callbackUrl", nextUrl.pathname + nextUrl.search);
+    }
     return NextResponse.redirect(redirectUrl);
   }
 

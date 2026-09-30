@@ -1,13 +1,15 @@
 // app/api/goals/[id]/contribute/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { addContribution, getGoalById } from "@/utils/goals";
-import { createTransaction } from "@/utils/transactions";
+import { contributeToGoal, getGoalById } from "@/utils/goals";
+import { db } from "@/db";
+import { transactions } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 const schema = z.object({
   amount: z.number().int().refine((n) => n !== 0, "Amount cannot be zero"),
-  note: z.string().max(300).optional(),
+  note: z.string().trim().max(300).optional(),
   contributedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   transactionId: z.string().uuid().optional(),
 });
@@ -29,8 +31,7 @@ export async function POST(
     if (goal.status !== "active")
       return NextResponse.json({ error: "Goal is not active" }, { status: 400 });
 
-    const body = await req.json();
-    const data = schema.parse(body);
+    const data = schema.parse(await req.json());
 
     // Prevent over-withdrawal from goal
     if (data.amount < 0 && Math.abs(data.amount) > goal.currentAmount) {
@@ -40,44 +41,37 @@ export async function POST(
       );
     }
 
-    let linkedTransactionId = data.transactionId;
-
-    // Only auto-create a transaction if the user didn't manually link one
-    if (!linkedTransactionId) {
-      const isDeposit = data.amount > 0;
-      const absAmount = Math.abs(data.amount);
-
-      // Deposit → expense transaction (money leaves your balance into the goal)
-      // Withdrawal → income transaction (money returns to your balance)
-      const tx = await createTransaction({
-        userId: session.user.id,
-        type: isDeposit ? "expense" : "income",
-        category: isDeposit ? "other_expense" : "other_income",
-        amount: absAmount,
-        description: isDeposit
-          ? `Savings: ${goal.name}`
-          : `Withdrawal from: ${goal.name}`,
-        note: data.note,
-        transactionDate: data.contributedAt,
-      });
-
-      linkedTransactionId = tx.id;
+    // A manually linked transaction must be one of the caller's own — the
+    // history view joins on it and would otherwise show someone else's
+    // transaction description.
+    if (data.transactionId) {
+      const [owned] = await db
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(and(eq(transactions.id, data.transactionId), eq(transactions.userId, session.user.id)))
+        .limit(1);
+      if (!owned) {
+        return NextResponse.json({ error: "Linked transaction not found" }, { status: 404 });
+      }
     }
 
-    // Record the contribution (now always linked to a transaction)
-    const updated = await addContribution({
-      goalId: id,
+    // Deposit → expense transaction (money leaves your balance into the goal);
+    // withdrawal → income transaction (money returns) — unless one was linked.
+    const updated = await contributeToGoal({
+      goal,
       userId: session.user.id,
       amount: data.amount,
-      note: data.note,
+      note: data.note || undefined,
       contributedAt: data.contributedAt,
-      transactionId: linkedTransactionId,
+      transactionId: data.transactionId,
     });
+    if (!updated) return NextResponse.json({ error: "Goal not found" }, { status: 404 });
 
     return NextResponse.json(updated, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError)
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
+    console.error("[goals] contribute failed", err);
     return NextResponse.json({ error: "Failed to add contribution" }, { status: 500 });
   }
 }

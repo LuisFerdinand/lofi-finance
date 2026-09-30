@@ -1,8 +1,25 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
+import { Press_Start_2P, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
+
+// Self-hosted at build time — no runtime request to Google, no FOUT. The CSS
+// variables are consumed by --font-mono / --font-pixel in globals.css.
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-space-mono",
+  display: "swap",
+});
+const pressStart = Press_Start_2P({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-press-start",
+  display: "swap",
+});
 
 const APP_NAME = "LoFi Finance";
 const APP_DESCRIPTION =
@@ -66,13 +83,20 @@ export default function RootLayout({
   // /register pages, as dynamic — trading a bigger, ongoing cost for a
   // smaller one.)
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      className={`${spaceMono.variable} ${pressStart.variable}`}
+    >
       <body className="antialiased">
         <SessionProvider refetchOnWindowFocus={false}>
           {children}
           <Toaster
             position="bottom-right"
             duration={6000}
+            // Clear the fixed mobile bottom nav + FAB instead of covering them.
+            mobileOffset={{ bottom: 88 }}
             toastOptions={{
               style: {
                 background: "var(--card)",
@@ -80,7 +104,7 @@ export default function RootLayout({
                 border: "var(--pixel-border)",
                 boxShadow: "var(--pixel-shadow-sm)",
                 fontFamily: "var(--font-mono)",
-                fontSize: "12px",
+                fontSize: "14px",
                 borderRadius: "0px",
               },
             }}

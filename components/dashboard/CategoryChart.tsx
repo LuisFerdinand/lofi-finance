@@ -27,7 +27,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   const item = payload[0].payload;
   return (
     <div className="pixel-box bg-card p-3 text-xs font-mono">
-      <p className="font-pixel mb-1 flex items-center gap-1.5" style={{ fontSize: "8px" }}>
+      <p className="font-pixel mb-1 flex items-center gap-1.5" style={{ fontSize: "10px" }}>
         <CategoryIconDisplay category={item.category} size={11} /> {getCategoryLabel(item.category)}
       </p>
       <p className="text-muted-foreground">{centsToDisplay(item.total)}</p>
@@ -93,7 +93,7 @@ export default function CategoryChart({ data }: CategoryChartProps) {
                 </div>
                 <span
                   className="font-pixel text-xs shrink-0"
-                  style={{ fontSize: "8px" }}
+                  style={{ fontSize: "10px" }}
                 >
                   {item.percentage}%
                 </span>

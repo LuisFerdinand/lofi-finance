@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { eq } from "drizzle-orm";
 import { getAllTodos, type TodoWithProject } from "@/utils/projects";
+import { todayInTimeZone } from "@/utils";
 
 const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
 const ACTIVE = new Set(["open", "in_progress", "on_hold"]);
@@ -83,15 +84,19 @@ export function renderReminderEmail(digest: ReminderDigest): {
   html: string;
   text: string;
 } {
-  const today = new Date().toISOString().slice(0, 10);
-  const dateLabel = format(new Date(), "EEEE, d MMMM yyyy");
+  // The server runs in UTC; "today" / "overdue" should follow the app's home
+  // timezone (WIB) so a test send in the evening doesn't use tomorrow's date.
+  const today = todayInTimeZone();
+  const dateLabel = format(parseISO(today), "EEEE, d MMMM yyyy");
   const { name } = digest.user;
   const tasks = digest.tasks;
   const highCount = tasks.filter((t) => t.priority === "high").length;
   const overdue = tasks.filter((t) => t.dueDate && t.dueDate < today).length;
 
   const appUrl = (process.env.AUTH_URL || process.env.VERCEL_URL || "").replace(/\/$/, "");
-  const boardHref = appUrl ? `${appUrl.startsWith("http") ? appUrl : `https://${appUrl}`}/tasks` : "#";
+  const origin = appUrl ? (appUrl.startsWith("http") ? appUrl : `https://${appUrl}`) : "";
+  const boardHref = origin ? `${origin}/tasks` : "#";
+  const taskHref = (id: string) => (origin ? `${origin}/tasks/${id}` : "#");
 
   const subject =
     tasks.length === 0
@@ -115,7 +120,7 @@ export function renderReminderEmail(digest: ReminderDigest): {
         <td style="padding:8px 10px;border-top:1px solid ${C.line};white-space:nowrap;vertical-align:top;">
           <span style="display:inline-block;background:${badge.bg};color:${badge.fg};font-size:10px;font-weight:bold;letter-spacing:.5px;padding:2px 6px;border:1px solid ${C.ink};">${t.priority.toUpperCase()}</span>
         </td>
-        <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:13px;color:${C.ink};">${esc(t.title)}${checklist}</td>
+        <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:13px;color:${C.ink};"><a href="${taskHref(t.id)}" style="color:${C.ink};text-decoration:underline;">${esc(t.title)}</a>${checklist}</td>
         <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:12px;color:${C.muted};white-space:nowrap;">${esc(t.projectName ?? "personal")}</td>
         <td style="padding:8px 10px;border-top:1px solid ${C.line};font-size:12px;color:${due.color};white-space:nowrap;">${due.label}</td>
       </tr>`;

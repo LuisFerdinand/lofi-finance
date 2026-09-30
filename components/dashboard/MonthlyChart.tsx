@@ -38,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="pixel-box bg-card p-3 text-xs font-mono">
-      <p className="font-pixel mb-2" style={{ fontSize: "8px" }}>{label}</p>
+      <p className="font-pixel mb-2" style={{ fontSize: "10px" }}>{label}</p>
       {payload.map((entry: any) => (
         <p key={entry.name} style={{ color: entry.color }}>
           {LABELS[entry.name] ?? entry.name}: Rp {formatRupiah(entry.value)}
@@ -74,13 +74,13 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
           <CartesianGrid strokeDasharray="2 2" stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="month"
-            tick={{ fontFamily: "Space Mono", fontSize: 9, fill: "var(--muted-foreground)" }}
+            tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
             axisLine={{ stroke: "var(--border)" }}
             tickLine={false}
           />
           <YAxis
             yAxisId="flow"
-            tick={{ fontFamily: "Space Mono", fontSize: 9, fill: "var(--muted-foreground)" }}
+            tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => formatRupiah(v)}
@@ -88,7 +88,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
           <YAxis
             yAxisId="balance"
             orientation="right"
-            tick={{ fontFamily: "Space Mono", fontSize: 9, fill: "var(--muted-foreground)" }}
+            tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => formatRupiah(v)}

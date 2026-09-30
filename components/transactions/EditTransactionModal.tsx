@@ -1,13 +1,14 @@
-// src/components/transactions/EditTransactionModal.tsx
+// components/transactions/EditTransactionModal.tsx
 "use client";
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { X } from "lucide-react";
-import { getCategoriesByType, getCategoryLabel } from "@/utils";
+import { todayISO } from "@/utils";
 import type { Transaction } from "@/db/schema";
-import type { TransactionType } from "@/types";
+import type { Category, TransactionType } from "@/types";
 import RupiahInput from "@/components/ui/RupiahInput";
+import Modal from "@/components/ui/Modal";
+import CategoryPicker from "./CategoryPicker";
 
 interface Props {
   transaction: Transaction;
@@ -19,138 +20,153 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess }
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState<TransactionType>(transaction.type);
   const [amount, setAmount] = useState<number>(transaction.amount);
+  // Remember a category per type, so flipping income ⇄ expense and back
+  // restores the original instead of forcing a re-pick.
+  const [categoryByType, setCategoryByType] = useState<Record<TransactionType, Category | "">>({
+    income: transaction.type === "income" ? (transaction.category as Category) : "",
+    expense: transaction.type === "expense" ? (transaction.category as Category) : "",
+  });
   const [form, setForm] = useState({
-    category: transaction.category,
     description: transaction.description,
     note: transaction.note ?? "",
     transactionDate: transaction.transactionDate,
   });
-
-  const categories = getCategoriesByType(type);
+  const category = categoryByType[type];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!amount || amount <= 0) { toast.error("enter a valid amount"); return; }
+    if (!category) {
+      toast.error("pick a category");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      toast.error("enter a valid amount");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/transactions/${transaction.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, type, amount }),
+        body: JSON.stringify({ ...form, note: form.note.trim() || null, category, type, amount }),
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "failed to update");
+      }
       toast.success("transaction updated!");
       onSuccess();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to update");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to update");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="pixel-box bg-card w-full max-w-md animate-slide-up">
-        <div className="bg-blue-fantastic text-palladian px-4 py-3 flex items-center justify-between">
-          <span className="font-pixel text-xs">EDIT TRANSACTION</span>
-          <button onClick={onClose} className="text-oatmeal hover:text-burning-flame transition-colors">
-            <X size={14} />
-          </button>
+    <Modal open onClose={onClose} title="EDIT TRANSACTION" headerClassName="bg-blue-fantastic text-palladian">
+      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {/* Type toggle */}
+        <div className="flex gap-2">
+          {(["income", "expense"] as TransactionType[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={type === t}
+              onClick={() => setType(t)}
+              className={`flex-1 pixel-btn font-pixel py-2.5 transition-colors ${
+                type === t
+                  ? t === "income"
+                    ? "bg-burning-flame text-abyssal"
+                    : "bg-truffle text-palladian"
+                  : "bg-background text-muted-foreground hover:bg-muted"
+              }`}
+              style={{ fontSize: "11px" }}
+            >
+              {t === "income" ? "▲ INCOME" : "▼ EXPENSE"}
+            </button>
+          ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Type toggle */}
-          <div className="flex gap-2">
-            {(["income", "expense"] as TransactionType[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => { setType(t); setForm((f) => ({ ...f, category: "" as any })); }}
-                className={`flex-1 pixel-btn font-pixel py-2 transition-colors ${
-                  type === t
-                    ? t === "income" ? "bg-burning-flame text-abyssal" : "bg-truffle text-palladian"
-                    : "bg-background text-muted-foreground hover:bg-muted"
-                }`}
-                style={{ fontSize: "9px" }}
-              >
-                {t === "income" ? "▲ INCOME" : "▼ EXPENSE"}
-              </button>
-            ))}
-          </div>
+        <RupiahInput value={amount} onChange={setAmount} required />
 
-          {/* Rupiah amount input */}
-          <RupiahInput value={amount} onChange={setAmount} required />
+        <div>
+          <label htmlFor="edit-tx-desc" className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
+            DESCRIPTION
+          </label>
+          <input
+            id="edit-tx-desc"
+            type="text"
+            required
+            maxLength={200}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-burning-flame"
+          />
+        </div>
 
-          {/* Description */}
-          <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>DESCRIPTION</label>
-            <input
-              type="text"
-              required
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-burning-flame"
-            />
-          </div>
+        <div>
+          <p className="font-pixel mb-2" style={{ fontSize: "10px" }}>
+            CATEGORY
+          </p>
+          <CategoryPicker
+            type={type}
+            value={category}
+            onChange={(c) => setCategoryByType((m) => ({ ...m, [type]: c }))}
+          />
+        </div>
 
-          {/* Category */}
-          <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>CATEGORY</label>
-            <select
-              required
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value as typeof form.category })}
-              className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
-            >
-              <option value="" disabled>select category</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>{getCategoryLabel(c)}</option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label htmlFor="edit-tx-date" className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
+            DATE
+          </label>
+          <input
+            id="edit-tx-date"
+            type="date"
+            required
+            value={form.transactionDate}
+            max={todayISO()}
+            onChange={(e) => setForm({ ...form, transactionDate: e.target.value })}
+            className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
+          />
+        </div>
 
-          {/* Date */}
-          <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>DATE</label>
-            <input
-              type="date"
-              required
-              value={form.transactionDate}
-              max={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setForm({ ...form, transactionDate: e.target.value })}
-              className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
-            />
-          </div>
+        <div>
+          <label htmlFor="edit-tx-note" className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
+            NOTE <span className="text-muted-foreground">(optional)</span>
+          </label>
+          <input
+            id="edit-tx-note"
+            type="text"
+            maxLength={500}
+            value={form.note}
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
+            className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none placeholder:text-muted-foreground"
+            placeholder="Extra details..."
+          />
+        </div>
 
-          {/* Note */}
-          <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
-              NOTE <span className="text-muted-foreground">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={form.note}
-              onChange={(e) => setForm({ ...form, note: e.target.value })}
-              className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none placeholder:text-muted-foreground"
-              placeholder="Extra details..."
-            />
-          </div>
-
+        <div className="flex gap-2">
           <button
             type="submit"
             disabled={loading}
-            className={`w-full pixel-btn font-pixel py-3 transition-colors disabled:opacity-60 ${
+            className={`flex-1 pixel-btn font-pixel py-3 transition-colors disabled:opacity-60 ${
               type === "income" ? "bg-burning-flame text-abyssal" : "bg-truffle text-palladian"
             }`}
-            style={{ fontSize: "9px" }}
+            style={{ fontSize: "11px" }}
           >
-            {loading ? "SAVING..." : "► UPDATE TRANSACTION"}
+            {loading ? "SAVING..." : "► SAVE CHANGES"}
           </button>
-        </form>
-      </div>
-    </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="pixel-btn bg-muted text-foreground font-pixel px-4 py-3"
+            style={{ fontSize: "11px" }}
+          >
+            CANCEL
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

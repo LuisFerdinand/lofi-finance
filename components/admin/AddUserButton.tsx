@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import FabButton from "@/components/ui/FabButton";
+import Modal from "@/components/ui/Modal";
 
 export default function AddUserButton() {
   const [open, setOpen] = useState(false);
@@ -13,7 +14,7 @@ export default function AddUserButton() {
       <button
         onClick={() => setOpen(true)}
         className="hidden md:flex pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 items-center gap-2 shrink-0"
-        style={{ fontSize: "9px" }}
+        style={{ fontSize: "11px" }}
       >
         <UserPlus size={12} />
         ADD USER
@@ -47,28 +48,20 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "failed to create user");
       toast.success("user created!");
       router.refresh();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to create user");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to create user");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0">
-      <div className="pixel-box bg-card w-full max-w-md animate-slide-up">
-        <div className="bg-abyssal text-palladian px-4 py-3 flex items-center justify-between">
-          <span className="font-pixel text-xs">CREATE USER</span>
-          <button onClick={onClose} className="text-oatmeal hover:text-burning-flame">
-            <X size={14} />
-          </button>
-        </div>
-
+    <Modal open onClose={onClose} title="CREATE USER">
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {[
             { key: "name", label: "NAME", type: "text", placeholder: "Full name" },
@@ -76,7 +69,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
             { key: "password", label: "PASSWORD", type: "password", placeholder: "min 8 characters" },
           ].map(({ key, label, type, placeholder }) => (
             <div key={key}>
-              <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>{label}</label>
+              <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>{label}</label>
               <input
                 type={type}
                 required
@@ -89,7 +82,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
           ))}
 
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>ROLE</label>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>ROLE</label>
             <div className="flex gap-2">
               {(["user", "admin"] as const).map((r) => (
                 <button
@@ -103,7 +96,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
                         : "bg-abyssal text-palladian"
                       : "bg-background text-foreground"
                   }`}
-                  style={{ fontSize: "9px" }}
+                  style={{ fontSize: "11px" }}
                 >
                   {r.toUpperCase()}
                 </button>
@@ -115,12 +108,11 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
             type="submit"
             disabled={loading}
             className="w-full pixel-btn bg-burning-flame text-abyssal font-pixel py-3 disabled:opacity-60"
-            style={{ fontSize: "9px" }}
+            style={{ fontSize: "11px" }}
           >
             {loading ? "CREATING..." : "► CREATE USER"}
           </button>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

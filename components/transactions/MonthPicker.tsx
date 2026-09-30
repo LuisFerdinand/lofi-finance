@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { getLast6Months, formatMonth } from "@/utils";
+import { getLast6Months } from "@/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/utils";
 
@@ -35,6 +35,7 @@ export default function MonthPicker({ currentMonth, currentYear }: Props) {
     <div className="flex items-center gap-2 overflow-x-auto pb-1">
       <button
         onClick={() => shift(-1)}
+        aria-label="previous month"
         className="pixel-btn bg-card p-2 shrink-0"
       >
         <ChevronLeft size={12} />
@@ -53,7 +54,7 @@ export default function MonthPicker({ currentMonth, currentYear }: Props) {
                   ? "bg-abyssal text-burning-flame"
                   : "bg-card text-foreground hover:bg-muted"
               )}
-              style={{ fontSize: "7px" }}
+              style={{ fontSize: "9px" }}
             >
               {label}
             </button>
@@ -63,6 +64,7 @@ export default function MonthPicker({ currentMonth, currentYear }: Props) {
 
       <button
         onClick={() => shift(1)}
+        aria-label="next month"
         className="pixel-btn bg-card p-2 shrink-0"
       >
         <ChevronRight size={12} />

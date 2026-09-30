@@ -17,6 +17,10 @@ import CategoryChart from "@/components/dashboard/CategoryChart";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import GoalsDashboardWidget from "@/components/goals/GoalsDashboardWidget";
 import AddTransactionButton from "@/components/transactions/AddTransactionButton";
+import TasksDashboardWidget from "@/components/tasks/TasksDashboardWidget";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -75,8 +79,9 @@ export default async function DashboardPage() {
           <MonthlyChart data={chartData} />
           <GoalsDashboardWidget userId={session.user.id} />
         </div>
-        <div>
+        <div className="space-y-4">
           <CategoryChart data={expenseBreakdown} />
+          <TasksDashboardWidget userId={session.user.id} />
         </div>
       </div>
 

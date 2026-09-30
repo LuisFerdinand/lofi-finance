@@ -47,7 +47,7 @@ export default function RupiahInput({
 
   return (
     <div>
-      <label htmlFor={id} className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
+      <label htmlFor={id} className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
         {label}
       </label>
       <input
@@ -65,8 +65,8 @@ export default function RupiahInput({
                    placeholder:text-muted-foreground"
       />
       <div className={`mt-1 flex items-center gap-2 transition-opacity ${showPreview ? "opacity-100" : "opacity-0"}`}>
-        <span className="font-pixel text-muted-foreground" style={{ fontSize: "7px" }}>=</span>
-        <span className="font-pixel text-burning-flame-ink tracking-wide" style={{ fontSize: "9px" }}>
+        <span className="font-pixel text-muted-foreground" style={{ fontSize: "9px" }}>=</span>
+        <span className="font-pixel text-burning-flame-ink tracking-wide" style={{ fontSize: "11px" }}>
           Rp {formatted}
         </span>
       </div>

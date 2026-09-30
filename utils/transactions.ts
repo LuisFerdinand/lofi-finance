@@ -1,6 +1,7 @@
+import "server-only"; // prevents DB code leaking into client bundles
 import { db } from "@/db";
 import { transactions } from "@/db/schema";
-import { eq, and, gte, lte, desc, count, sql, like, or } from "drizzle-orm";
+import { eq, and, gte, lte, desc, count, sql, ilike, or } from "drizzle-orm";
 import { getMonthRange } from "@/utils";
 import type {
   TransactionFilters,
@@ -41,11 +42,10 @@ export async function getTransactions(
   }
 
   if (search) {
+    // Case-insensitive, with LIKE wildcards in the user's text taken literally.
+    const pattern = `%${search.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
     conditions.push(
-      or(
-        like(transactions.description, `%${search}%`),
-        like(transactions.note, `%${search}%`)
-      )!
+      or(ilike(transactions.description, pattern), ilike(transactions.note, pattern))!
     );
   }
 
@@ -227,21 +227,41 @@ export async function getCategoryBreakdown(
 
 export async function getMonthlyTrend(userId: string): Promise<MonthlyTrend[]> {
   const months = getLast6Months();
+  const first = months[0];
+  const last = months[months.length - 1];
+  const start = getMonthRange(first.month, first.year).start;
+  const end = getMonthRange(last.month, last.year).end;
+  const ym = sql<string>`to_char(${transactions.transactionDate}, 'YYYY-MM')`;
 
-  const results = await Promise.all(
-    months.map(async ({ month, year, label }) => {
-      const stats = await getMonthlyStats(userId, month, year);
-      return {
-        month: label,
-        year,
-        income: stats.totalIncome,
-        expense: stats.totalExpense,
-        net: stats.netBalance,
-      };
+  // One grouped query for the whole window instead of one per month.
+  const rows = await db
+    .select({
+      ym,
+      type: transactions.type,
+      total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
     })
-  );
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.transactionDate, start),
+        lte(transactions.transactionDate, end)
+      )
+    )
+    .groupBy(ym, transactions.type);
 
-  return results;
+  const byMonth = new Map<string, { income: number; expense: number }>();
+  for (const r of rows) {
+    const entry = byMonth.get(r.ym) ?? { income: 0, expense: 0 };
+    entry[r.type] = Number(r.total);
+    byMonth.set(r.ym, entry);
+  }
+
+  return months.map(({ month, year, label }) => {
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const { income, expense } = byMonth.get(key) ?? { income: 0, expense: 0 };
+    return { month: label, year, income, expense, net: income - expense };
+  });
 }
 
 // ─── Create transaction ───────────────────────────────────────────────────────
@@ -269,22 +289,24 @@ export async function updateTransaction(
     category: Category;
     amount: number;
     description: string;
-    note: string;
+    note: string | null;
     transactionDate: string;
   }>
-) {
+): Promise<Transaction | null> {
   const [tx] = await db
     .update(transactions)
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
     .returning();
-  return tx;
+  return tx ?? null;
 }
 
 // ─── Delete transaction ───────────────────────────────────────────────────────
 
-export async function deleteTransaction(id: string, userId: string) {
-  await db
+export async function deleteTransaction(id: string, userId: string): Promise<boolean> {
+  const rows = await db
     .delete(transactions)
-    .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
+    .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
+    .returning({ id: transactions.id });
+  return rows.length > 0;
 }

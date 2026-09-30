@@ -1,15 +1,9 @@
 // app/api/projects/[id]/todos/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getProjectById, getTodos, createTodo } from "@/utils/projects";
-import { z } from "zod";
-
-const createSchema = z.object({
-  title: z.string().min(1).max(200),
-  notes: z.string().max(500).optional(),
-  priority: z.enum(["low", "medium", "high"]).default("medium"),
-  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-});
+import { createTodoSchema, firstZodMessage, todoStatus } from "@/utils/todo-schema";
 
 export async function GET(
   req: NextRequest,
@@ -20,13 +14,11 @@ export async function GET(
 
   const { id } = await params;
   const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status");
+  const status = todoStatus.safeParse(searchParams.get("status"));
   const search = searchParams.get("search");
-  const validStatuses = ["open", "in_progress", "on_hold", "done", "cancelled"] as const;
-  type TodoStatus = (typeof validStatuses)[number];
 
   const todos = await getTodos(id, session.user.id, {
-    status: validStatuses.includes(status as TodoStatus) ? (status as TodoStatus) : undefined,
+    status: status.success ? status.data : undefined,
     search: search ?? undefined,
   });
   return NextResponse.json(todos);
@@ -44,12 +36,12 @@ export async function POST(
     const project = await getProjectById(id, session.user.id);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-    const body = await req.json();
-    const data = createSchema.parse(body);
+    const data = createTodoSchema.parse(await req.json());
     const todo = await createTodo({ ...data, projectId: id, userId: session.user.id });
     return NextResponse.json(todo, { status: 201 });
   } catch (err) {
-    if (err instanceof z.ZodError) return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
-    return NextResponse.json({ error: "Failed to create todo" }, { status: 500 });
+    if (err instanceof z.ZodError) return NextResponse.json({ error: firstZodMessage(err) }, { status: 400 });
+    console.error("[projects] create todo failed", err);
+    return NextResponse.json({ error: "Failed to create task" }, { status: 500 });
   }
 }

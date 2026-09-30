@@ -61,7 +61,7 @@ export default function Tooltip({ label, children, position = "right" }: Tooltip
             className={`fixed z-[100] whitespace-nowrap px-2 py-1.5
                        bg-abyssal text-palladian font-pixel pixel-box-sm pointer-events-none
                        ${position === "bottom" ? "-translate-x-1/2" : "-translate-y-1/2"}`}
-            style={{ top: pos.top, left: pos.left, fontSize: "8px" }}
+            style={{ top: pos.top, left: pos.left, fontSize: "10px" }}
           >
             {label}
           </span>,

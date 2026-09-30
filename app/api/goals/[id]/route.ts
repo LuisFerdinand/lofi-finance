@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/api/goals/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -7,7 +6,7 @@ import { z } from "zod";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  notes: z.string().max(500).optional(),
+  notes: z.string().trim().max(500).nullable().optional(),
   icon: z.enum(["home","car","plane","laptop","heart","graduation","ring","baby","piggy","star","shield","zap"]).optional(),
   targetAmount: z.number().int().positive().optional(),
   deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
@@ -42,7 +41,11 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
     const data = updateSchema.parse(body);
-    const goal = await updateGoal(id, session.user.id, data as any);
+    const goal = await updateGoal(id, session.user.id, {
+      ...data,
+      ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
+    });
+    if (!goal) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(goal);
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
@@ -58,6 +61,7 @@ export async function DELETE(
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await deleteGoal(id, session.user.id);
+  const deleted = await deleteGoal(id, session.user.id);
+  if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

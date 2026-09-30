@@ -36,7 +36,7 @@ export default async function AdminPage() {
           { label: "USERS", value: stats.users, bg: "bg-oatmeal", text: "text-abyssal" },
         ].map((s) => (
           <div key={s.label} className={`pixel-box ${s.bg} ${s.text} p-4`}>
-            <p className="font-pixel leading-none mb-2" style={{ fontSize: "7px" }}>{s.label}</p>
+            <p className="font-pixel leading-none mb-2" style={{ fontSize: "9px" }}>{s.label}</p>
             <p className="font-pixel text-lg">{s.value}</p>
           </div>
         ))}

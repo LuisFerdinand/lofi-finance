@@ -37,7 +37,11 @@ export default function LoginPage() {
         toast.error("invalid credentials");
         return;
       }
-      router.push("/dashboard");
+      // Go back to the page that bounced us here — same-origin paths only, so
+      // a crafted ?callbackUrl=https://evil.example can't redirect off-site.
+      const cb = new URLSearchParams(window.location.search).get("callbackUrl");
+      const dest = cb && cb.startsWith("/") && !cb.startsWith("//") && !cb.startsWith("/\\") ? cb : "/dashboard";
+      router.push(dest);
       router.refresh();
     } catch {
       toast.error("something went wrong");
@@ -97,11 +101,14 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-pixel text-xs text-foreground block mb-2">
+            <label htmlFor="login-email" className="font-pixel text-xs text-foreground block mb-2">
               EMAIL
             </label>
             <input
+              id="login-email"
               type="email"
+              autoComplete="email"
+              autoFocus
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -111,11 +118,13 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="font-pixel text-xs text-foreground block mb-2">
+            <label htmlFor="login-password" className="font-pixel text-xs text-foreground block mb-2">
               PASSWORD
             </label>
             <input
+              id="login-password"
               type="password"
+              autoComplete="current-password"
               required
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -138,7 +147,7 @@ export default function LoginPage() {
             no account?{" "}
             <Link
               href="/register"
-              className="text-burning-flame underline hover:text-truffle"
+              className="text-burning-flame-ink underline hover:text-truffle"
             >
               register here
             </Link>

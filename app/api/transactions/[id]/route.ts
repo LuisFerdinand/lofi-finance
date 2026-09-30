@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { updateTransaction, deleteTransaction } from "@/utils/transactions";
+import { updateTransactionSchema } from "@/utils/transaction-schema";
 import { z } from "zod";
-
-const updateSchema = z.object({
-  type: z.enum(["income", "expense"]).optional(),
-  category: z.string().min(1).optional(),
-  amount: z.number().int().positive().optional(),
-  description: z.string().min(1).max(200).optional(),
-  note: z.string().max(500).optional(),
-  transactionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-});
 
 export async function PATCH(
   req: NextRequest,
@@ -21,15 +13,18 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await req.json();
-    const data = updateSchema.parse(body);
-    const tx = await updateTransaction(id, session.user.id, data as any);
+    const data = updateTransactionSchema.parse(await req.json());
+    const tx = await updateTransaction(id, session.user.id, {
+      ...data,
+      ...(data.note !== undefined ? { note: data.note || null } : {}),
+    });
     if (!tx) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(tx);
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
+    console.error("[transactions] update failed", err);
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 }
@@ -43,9 +38,11 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await deleteTransaction(id, session.user.id);
+    const deleted = await deleteTransaction(id, session.user.id);
+    if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error("[transactions] delete failed", err);
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }

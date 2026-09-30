@@ -6,6 +6,7 @@ import { centsToDisplay, formatDate } from "@/utils";
 import GoalCard from "@/components/goals/GoalCard";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { z } from "zod";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -16,6 +17,8 @@ export default async function GoalDetailPage({ params }: PageProps) {
   if (!session?.user) redirect("/login");
 
   const { id } = await params;
+  // A malformed id would otherwise reach Postgres as an invalid uuid → 500.
+  if (!z.string().uuid().safeParse(id).success) notFound();
   const [goal, contributions] = await Promise.all([
     getGoalById(id, session.user.id),
     getGoalContributions(id, session.user.id),
@@ -30,7 +33,7 @@ export default async function GoalDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-5 animate-slide-up">
-      <Link href="/goals" className="inline-flex items-center gap-2 font-pixel text-xs text-muted-foreground hover:text-burning-flame transition-colors" style={{ fontSize: "8px" }}>
+      <Link href="/goals" className="inline-flex items-center gap-2 font-pixel text-xs text-muted-foreground hover:text-burning-flame transition-colors" style={{ fontSize: "10px" }}>
         <ArrowLeft size={10} /> BACK TO GOALS
       </Link>
 
@@ -45,7 +48,7 @@ export default async function GoalDetailPage({ params }: PageProps) {
               { label: "ENTRIES", value: String(contributions.length), bg: "bg-abyssal", text: "text-burning-flame" },
             ].map((s) => (
               <div key={s.label} className={`pixel-box-sm ${s.bg} ${s.text} p-3 text-center`}>
-                <p className="font-pixel leading-none mb-1" style={{ fontSize: "7px" }}>{s.label}</p>
+                <p className="font-pixel leading-none mb-1" style={{ fontSize: "9px" }}>{s.label}</p>
                 <p className="font-pixel text-xs break-all">{s.value}</p>
               </div>
             ))}
@@ -63,7 +66,7 @@ export default async function GoalDetailPage({ params }: PageProps) {
           ) : (
             contributions.map((c, i) => (
               <div key={c.id} className={`flex items-center gap-3 p-4 border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-background/40"}`}>
-                <div className={`pixel-tag shrink-0 ${c.amount > 0 ? "bg-burning-flame text-abyssal border-abyssal" : "bg-truffle text-palladian border-abyssal"}`} style={{ fontSize: "6px" }}>
+                <div className={`pixel-tag shrink-0 ${c.amount > 0 ? "bg-burning-flame text-abyssal border-abyssal" : "bg-truffle text-palladian border-abyssal"}`} style={{ fontSize: "8px" }}>
                   {c.amount > 0 ? "▲ IN" : "▼ OUT"}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -73,7 +76,7 @@ export default async function GoalDetailPage({ params }: PageProps) {
                   )}
                 </div>
                 <p className="font-mono text-xs text-muted-foreground whitespace-nowrap shrink-0">{formatDate(c.contributedAt)}</p>
-                <p className={`font-pixel shrink-0 ${c.amount > 0 ? "text-burning-flame-ink" : "text-truffle"}`} style={{ fontSize: "10px" }}>
+                <p className={`font-pixel shrink-0 ${c.amount > 0 ? "text-burning-flame-ink" : "text-truffle"}`} style={{ fontSize: "12px" }}>
                   {c.amount > 0 ? "+" : "−"}{centsToDisplay(Math.abs(c.amount))}
                 </p>
               </div>

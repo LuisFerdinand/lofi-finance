@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq, ne, count, desc, like, or, and } from "drizzle-orm";
+import "server-only";
+import { eq, count, desc, ilike, or, and, sql, type SQL } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import type { User } from "@/db/schema";
 import type { Role } from "@/types";
@@ -12,14 +13,14 @@ export async function getAllUsers(filters?: {
   role?: Role;
   isActive?: boolean;
 }): Promise<User[]> {
-  const conditions = [];
+  const conditions: SQL[] = [];
 
   if (filters?.search) {
     conditions.push(
       or(
-        like(users.name, `%${filters.search}%`),
-        like(users.email, `%${filters.search}%`)
-      )
+        ilike(users.name, `%${filters.search}%`),
+        ilike(users.email, `%${filters.search}%`)
+      )!
     );
   }
 
@@ -30,7 +31,7 @@ export async function getAllUsers(filters?: {
   const rows = await db
     .select()
     .from(users)
-    .where(conditions.length ? and(...(conditions as any[])) : undefined)
+    .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(users.createdAt));
 
   // Strip passwords
@@ -51,7 +52,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.email, email))
+    .where(eq(sql`lower(${users.email})`, email.trim().toLowerCase()))
     .limit(1);
   return user ?? null;
 }
@@ -88,13 +89,13 @@ export async function updateUser(
     isActive: boolean;
     avatar: string;
   }>
-): Promise<User> {
+): Promise<User | null> {
   const [user] = await db
     .update(users)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(users.id, id))
     .returning();
-  return { ...user, password: "***" };
+  return user ? { ...user, password: "***" } : null;
 }
 
 // ─── Update password ──────────────────────────────────────────────────────────
@@ -112,19 +113,14 @@ export async function updatePassword(
 
 // ─── Toggle user active status ────────────────────────────────────────────────
 
-export async function toggleUserActive(id: string): Promise<User> {
-  const [current] = await db
-    .select({ isActive: users.isActive })
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
-
+export async function toggleUserActive(id: string): Promise<User | null> {
+  // Flip in SQL — one round trip, and no crash when the id doesn't exist.
   const [user] = await db
     .update(users)
-    .set({ isActive: !current.isActive, updatedAt: new Date() })
+    .set({ isActive: sql`not ${users.isActive}`, updatedAt: new Date() })
     .where(eq(users.id, id))
     .returning();
-  return { ...user, password: "***" };
+  return user ? { ...user, password: "***" } : null;
 }
 
 // ─── Delete user ──────────────────────────────────────────────────────────────
@@ -136,15 +132,14 @@ export async function deleteUser(id: string): Promise<void> {
 // ─── User stats (admin dashboard) ────────────────────────────────────────────
 
 export async function getUserStats() {
-  const [{ total }] = await db.select({ total: count() }).from(users);
-  const [{ active }] = await db
-    .select({ active: count() })
-    .from(users)
-    .where(eq(users.isActive, true));
-  const [{ admins }] = await db
-    .select({ admins: count() })
-    .from(users)
-    .where(eq(users.role, "admin"));
-
-  return { total, active, admins, users: total - admins };
+  const [row] = await db
+    .select({
+      total: count(),
+      active: sql<number>`count(*) filter (where ${users.isActive})::int`,
+      admins: sql<number>`count(*) filter (where ${users.role} = 'admin')::int`,
+    })
+    .from(users);
+  const total = Number(row?.total ?? 0);
+  const admins = Number(row?.admins ?? 0);
+  return { total, active: Number(row?.active ?? 0), admins, users: total - admins };
 }

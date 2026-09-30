@@ -1,16 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/goals/AddGoalButton.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
+import { todayISO } from "@/utils";
 import { GOAL_ICON_MAP } from "@/utils/goals-helpers"; // ← client-safe import
 import type { GoalIcon } from "@/types";
 import RupiahInput from "@/components/ui/RupiahInput";
 import IconPicker from "@/components/ui/IconPicker";
 import FabButton from "@/components/ui/FabButton";
+import Modal from "@/components/ui/Modal";
 
 export default function AddGoalButton() {
   const [open, setOpen] = useState(false);
@@ -19,7 +20,7 @@ export default function AddGoalButton() {
       <button
         onClick={() => setOpen(true)}
         className="hidden md:flex pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 items-center gap-2 shrink-0"
-        style={{ fontSize: "9px" }}
+        style={{ fontSize: "11px" }}
       >
         <Plus size={12} /> NEW GOAL
       </button>
@@ -55,34 +56,26 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
           notes: form.notes || undefined,
         }),
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "failed to create goal");
+      }
       toast.success("goal created!");
       router.refresh();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message ?? "failed to create goal");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "failed to create goal");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[90dvh] overflow-y-auto">
-        <div className="bg-abyssal text-palladian px-4 py-3 flex items-center justify-between sticky top-0">
-          <span className="font-pixel text-xs">NEW SAVINGS GOAL</span>
-          <button onClick={onClose} className="text-oatmeal hover:text-burning-flame transition-colors">
-            <X size={14} />
-          </button>
-        </div>
-
+    <Modal open onClose={onClose} title="NEW SAVINGS GOAL">
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Icon picker */}
           <div>
-            <label className="font-pixel block mb-2" style={{ fontSize: "8px" }}>ICON</label>
+            <label className="font-pixel block mb-2" style={{ fontSize: "10px" }}>ICON</label>
             <IconPicker
               icons={GOAL_ICON_MAP}
               value={form.icon}
@@ -92,7 +85,7 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
 
           {/* Name */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>GOAL NAME</label>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>GOAL NAME</label>
             <input
               type="text"
               required
@@ -109,13 +102,13 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
 
           {/* Deadline */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
               DEADLINE <span className="text-muted-foreground">(optional)</span>
             </label>
             <input
               type="date"
               value={form.deadline}
-              min={new Date().toISOString().slice(0, 10)}
+              min={todayISO()}
               onChange={(e) => setForm({ ...form, deadline: e.target.value })}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
             />
@@ -123,7 +116,7 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
 
           {/* Notes */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
               NOTES <span className="text-muted-foreground">(optional)</span>
             </label>
             <textarea
@@ -139,12 +132,11 @@ function AddGoalModal({ onClose }: { onClose: () => void }) {
             type="submit"
             disabled={loading}
             className="w-full pixel-btn bg-burning-flame text-abyssal font-pixel py-3 disabled:opacity-60"
-            style={{ fontSize: "9px" }}
+            style={{ fontSize: "11px" }}
           >
             {loading ? "CREATING..." : "► CREATE GOAL"}
           </button>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

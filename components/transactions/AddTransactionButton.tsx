@@ -4,12 +4,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
-import { getCategoriesByType, getCategoryLabel } from "@/utils";
-import { CategoryIconDisplay } from "@/utils/category-icons";
+import { Plus } from "lucide-react";
+import { todayISO } from "@/utils";
 import type { TransactionType } from "@/types";
 import RupiahInput from "@/components/ui/RupiahInput";
 import FabButton from "@/components/ui/FabButton";
+import Modal from "@/components/ui/Modal";
+import CategoryPicker from "./CategoryPicker";
 
 const LAST_TXN_KEY = "lofi:lastTxn";
 
@@ -66,7 +67,7 @@ export default function AddTransactionButton() {
       <button
         onClick={() => { setPresetType(null); setOpen(true); }}
         className="hidden md:flex pixel-btn bg-burning-flame text-abyssal font-pixel px-4 py-2 items-center gap-2 shrink-0"
-        style={{ fontSize: "9px" }}
+        style={{ fontSize: "11px" }}
       >
         <Plus size={12} /> ADD
       </button>
@@ -102,10 +103,8 @@ function AddModal({
     category: last?.type === initialType ? (last?.category ?? "") : "",
     description: "",
     note: "",
-    transactionDate: new Date().toISOString().slice(0, 10),
+    transactionDate: todayISO(),
   });
-
-  const categories = getCategoriesByType(type);
 
   function handleTypeChange(t: TransactionType) {
     setType(t);
@@ -140,18 +139,7 @@ function AddModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-abyssal/70 z-50 flex items-end md:items-center justify-center p-4 bottom-12 md:bottom-0"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="pixel-box bg-card w-full max-w-md animate-slide-up max-h-[90dvh] overflow-y-auto">
-        <div className="bg-abyssal text-palladian px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-          <span className="font-pixel text-xs">ADD TRANSACTION</span>
-          <button onClick={onClose} aria-label="Close" className="text-oatmeal hover:text-burning-flame transition-colors">
-            <X size={14} />
-          </button>
-        </div>
-
+    <Modal open onClose={onClose} title="ADD TRANSACTION">
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Type toggle */}
           <div className="flex gap-2">
@@ -159,15 +147,16 @@ function AddModal({
               <button
                 key={t}
                 type="button"
+                aria-pressed={type === t}
                 onClick={() => handleTypeChange(t)}
-                className={`flex-1 pixel-btn font-pixel py-2 transition-colors ${
+                className={`flex-1 pixel-btn font-pixel py-2.5 transition-colors ${
                   type === t
                     ? t === "income"
                       ? "bg-burning-flame text-abyssal"
                       : "bg-truffle text-palladian"
                     : "bg-background text-muted-foreground hover:bg-muted"
                 }`}
-                style={{ fontSize: "9px" }}
+                style={{ fontSize: "11px" }}
               >
                 {t === "income" ? "▲ INCOME" : "▼ EXPENSE"}
               </button>
@@ -184,10 +173,12 @@ function AddModal({
 
           {/* Description */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>DESCRIPTION</label>
+            <label htmlFor="add-tx-desc" className="font-pixel block mb-1" style={{ fontSize: "10px" }}>DESCRIPTION</label>
             <input
+              id="add-tx-desc"
               type="text"
               required
+              maxLength={200}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-burning-flame placeholder:text-muted-foreground"
@@ -195,39 +186,24 @@ function AddModal({
             />
           </div>
 
-          {/* Category — tappable chips, faster than a dropdown on mobile */}
+          {/* Category — tappable icon grid, faster than a dropdown on mobile */}
           <div>
-            <label className="font-pixel block mb-2" style={{ fontSize: "8px" }}>CATEGORY</label>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => {
-                const selected = form.category === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setForm({ ...form, category: c })}
-                    className={`pixel-btn flex items-center gap-1.5 px-2.5 py-2 font-mono text-xs transition-colors ${
-                      selected
-                        ? "bg-burning-flame text-abyssal border-abyssal"
-                        : "bg-muted text-foreground hover:bg-oatmeal"
-                    }`}
-                  >
-                    <CategoryIconDisplay category={c} size={13} />
-                    <span>{getCategoryLabel(c)}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <p className="font-pixel mb-2" style={{ fontSize: "10px" }}>CATEGORY</p>
+            <CategoryPicker
+              type={type}
+              value={form.category}
+              onChange={(c) => setForm({ ...form, category: c })}
+            />
           </div>
 
           {/* Date */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>DATE</label>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>DATE</label>
             <input
               type="date"
               required
               value={form.transactionDate}
-              max={new Date().toISOString().slice(0, 10)}
+              max={todayISO()}
               onChange={(e) => setForm({ ...form, transactionDate: e.target.value })}
               className="w-full pixel-inset bg-background px-3 py-2 font-mono text-sm focus:outline-none"
             />
@@ -235,7 +211,7 @@ function AddModal({
 
           {/* Note */}
           <div>
-            <label className="font-pixel block mb-1" style={{ fontSize: "8px" }}>
+            <label className="font-pixel block mb-1" style={{ fontSize: "10px" }}>
               NOTE <span className="text-muted-foreground">(optional)</span>
             </label>
             <input
@@ -254,7 +230,7 @@ function AddModal({
               className={`flex-1 pixel-btn font-pixel py-3 transition-colors disabled:opacity-60 ${
                 type === "income" ? "bg-burning-flame text-abyssal" : "bg-truffle text-palladian"
               }`}
-              style={{ fontSize: "9px" }}
+              style={{ fontSize: "11px" }}
             >
               {loading ? "SAVING..." : `► SAVE ${type.toUpperCase()}`}
             </button>
@@ -262,13 +238,12 @@ function AddModal({
               type="button"
               onClick={onClose}
               className="pixel-btn bg-muted text-foreground font-pixel px-4 py-3 transition-colors"
-              style={{ fontSize: "9px" }}
+              style={{ fontSize: "11px" }}
             >
               CANCEL
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
