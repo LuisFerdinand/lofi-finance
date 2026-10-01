@@ -1,4 +1,3 @@
-"use client";
 // components/tasks/TasksDashboardWidget.tsx
 // Server component — the dashboard's "what needs attention" card.
 import Link from "next/link";

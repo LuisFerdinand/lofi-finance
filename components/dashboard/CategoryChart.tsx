@@ -41,7 +41,7 @@ export default function CategoryChart({ data }: CategoryChartProps) {
   const top = data.slice(0, 6);
 
   return (
-    <div className="pixel-box bg-card p-4 h-full">
+    <div className="pixel-box bg-card p-4">
       <h2 className="font-pixel text-xs mb-4">TOP EXPENSES</h2>
 
       {top.length === 0 ? (

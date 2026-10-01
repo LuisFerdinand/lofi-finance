@@ -56,7 +56,7 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
       className={cn(
         "hidden md:flex flex-col bg-abyssal text-palladian border-r-2 border-abyssal shrink-0",
         "h-full transition-[width] duration-200",
-        collapsed ? "w-16" : "w-56"
+        collapsed ? "w-16" : "w-60"
       )}
     >
       {/* Logo */}
@@ -95,15 +95,17 @@ export default function Sidebar({ role }: { role: "admin" | "user" }) {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-3 font-pixel text-xs transition-all",
+                      "flex items-center gap-3 px-3 py-3 font-pixel transition-all",
                       collapsed && "justify-center px-0",
                       isActive
                         ? "bg-burning-flame text-abyssal pixel-box-sm"
                         : "text-oatmeal hover:text-burning-flame hover:bg-blue-fantastic"
                     )}
+                    style={{ fontSize: "12px" }}
                   >
-                    <item.icon size={12} />
-                    {!collapsed && <span className="leading-none">{item.label}</span>}
+                    {/* shrink-0: long labels (TRANSACTIONS) used to squeeze the icon to zero width */}
+                    <item.icon size={14} className="shrink-0" />
+                    {!collapsed && <span className="leading-none truncate min-w-0">{item.label}</span>}
                   </Link>
                 );
                 return collapsed ? (

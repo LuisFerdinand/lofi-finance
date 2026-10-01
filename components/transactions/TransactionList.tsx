@@ -7,9 +7,14 @@ import { toast } from "sonner";
 import { centsToDisplay, formatDate, getCategoryLabel } from "@/utils";
 import { CategoryIconDisplay } from "@/utils/category-icons";
 import type { Transaction } from "@/db/schema";
-import { Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Pencil, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import EditTransactionModal from "./EditTransactionModal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+
+// Desktop column template shared by the header and every row, so the columns
+// line up. Kept as one literal `md:` class so Tailwind generates it. The amount
+// column fits "−Rp 1.000.000.000" on one line.
+const COLS = "md:grid-cols-[88px_minmax(0,1fr)_minmax(140px,190px)_124px_210px_76px]";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -69,80 +74,85 @@ export default function TransactionList({ transactions, total, page, totalPages 
   return (
     <>
       <div className={`pixel-box bg-card overflow-hidden transition-opacity ${isPending ? "opacity-60" : "opacity-100"}`}>
-        {/* Desktop header */}
-        <div className="hidden md:grid md:grid-cols-[64px_1fr_160px_110px_180px_80px] gap-3 px-4 py-2 bg-abyssal text-palladian">
-          {["TYPE", "DESCRIPTION", "CATEGORY", "DATE", "AMOUNT", ""].map((h) => (
-            <p key={h} className="font-pixel text-palladian" style={{ fontSize: "9px" }}>{h}</p>
+        {/* Desktop header — same column template as the rows below */}
+        <div className={`hidden md:grid ${COLS} gap-x-4 px-4 py-2.5 bg-abyssal text-palladian`}>
+          {["TYPE", "DESCRIPTION", "CATEGORY", "DATE", "AMOUNT", ""].map((h, i) => (
+            <p
+              key={h || i}
+              className={`font-pixel text-palladian ${h === "AMOUNT" ? "text-right" : ""}`}
+              style={{ fontSize: "10px" }}
+            >
+              {h}
+            </p>
           ))}
         </div>
 
-        {optimisticTxns.map((tx, i) => (
+        {optimisticTxns.map((tx, i) => {
+          const income = tx.type === "income";
+          return (
           <div
             key={tx.id}
-            className={`group flex flex-col md:grid md:grid-cols-[64px_1fr_160px_110px_180px_80px]
-                        gap-2 md:gap-3 p-4 border-b border-border last:border-0
-                        hover:bg-muted/30 transition-colors items-start md:items-center
+            className={`group grid grid-cols-[auto_minmax(0,1fr)_auto] ${COLS} gap-x-3 md:gap-x-4 gap-y-1
+                        px-4 py-3 border-b border-border last:border-b-0 border-l-4 items-center
+                        hover:bg-muted/30 transition-colors
+                        ${income ? "border-l-burning-flame" : "border-l-truffle"}
                         ${i % 2 === 0 ? "" : "bg-background/40"}`}
           >
-            {/* Type badge */}
-            <div>
+            {/* Type — a badge on desktop; on phones the category icon takes this slot */}
+            <div className="hidden md:block">
               <span
-                className={`pixel-tag ${
-                  tx.type === "income"
-                    ? "bg-burning-flame text-abyssal border-abyssal"
-                    : "bg-truffle text-palladian border-abyssal"
+                className={`inline-flex items-center gap-1 whitespace-nowrap px-2 py-1 border-[1.5px] border-abyssal font-pixel ${
+                  income ? "bg-burning-flame text-abyssal" : "bg-truffle text-palladian"
                 }`}
                 style={{ fontSize: "9px" }}
               >
-                {tx.type === "income" ? "▲ IN" : "▼ OUT"}
+                {income ? <ArrowUpRight size={12} strokeWidth={3} /> : <ArrowDownRight size={12} strokeWidth={3} />}
+                {income ? "IN" : "OUT"}
               </span>
             </div>
+            <span className="md:hidden row-span-2 self-start w-9 h-9 border-2 border-border bg-muted flex items-center justify-center shrink-0">
+              <CategoryIconDisplay category={tx.category} size={16} />
+            </span>
 
-            {/* Description */}
-            <div className="min-w-0">
-              <p className="font-mono text-xs font-bold truncate">{tx.description}</p>
+            {/* Description (+ category · date on phones) */}
+            <div className="min-w-0 col-span-2 md:col-span-1">
+              <p className="font-mono text-sm font-bold truncate" title={tx.description}>{tx.description}</p>
               {tx.note && (
-                <p className="font-mono text-xs text-muted-foreground truncate">{tx.note}</p>
+                <p className="font-mono text-xs text-muted-foreground truncate" title={tx.note}>{tx.note}</p>
               )}
+              <p className="md:hidden font-mono text-xs text-muted-foreground truncate">
+                {getCategoryLabel(tx.category)} · {formatDate(tx.transactionDate)}
+              </p>
             </div>
 
             {/* Category */}
-            <div className="flex items-center gap-1.5">
-              <CategoryIconDisplay category={tx.category} size={14} className="shrink-0 text-muted-foreground" />
+            <div className="hidden md:flex items-center gap-1.5 min-w-0">
+              <CategoryIconDisplay category={tx.category} size={15} className="shrink-0 text-muted-foreground" />
               <span className="font-mono text-xs text-muted-foreground truncate">
                 {getCategoryLabel(tx.category)}
               </span>
             </div>
 
             {/* Date */}
-            <p className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+            <p className="hidden md:block font-mono text-xs text-muted-foreground whitespace-nowrap">
               {formatDate(tx.transactionDate)}
             </p>
 
-            {/* Amount — highlighted */}
-            <div className={`flex items-center gap-2 px-2 py-1.5 border-l-4 ${
-              tx.type === "income" ? "border-burning-flame" : "border-truffle"
-            }`}>
-              <span
-                className={`font-pixel leading-none ${
-                  tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
-                }`}
-                style={{ fontSize: "13px" }}
-              >
-                {tx.type === "income" ? "+" : "−"}
-              </span>
-              <span
-                className={`font-pixel break-all ${
-                  tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
-                }`}
-                style={{ fontSize: "13px" }}
-              >
-                {centsToDisplay(tx.amount)}
-              </span>
-            </div>
+            {/* Amount — one line, right-aligned so the digits line up down the column */}
+            <p
+              className={`col-start-2 md:col-start-auto min-w-0 font-pixel md:whitespace-nowrap text-left md:text-right tabular-nums ${
+                income ? "text-burning-flame-ink" : "text-truffle"
+              }`}
+              style={{ fontSize: "12px" }}
+            >
+              {income ? "+" : "−"}
+              {/* Intl puts a no-break space after "Rp"; a normal space lets a
+                  very large amount wrap on phones (desktop stays nowrap). */}
+              {centsToDisplay(tx.amount).replace(/ /g, " ")}
+            </p>
 
             {/* Actions */}
-            <div className="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
+            <div className="col-start-3 md:col-start-auto flex justify-end gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
               <button
                 onClick={() => setEditing(tx)}
                 className="pixel-btn p-1.5 bg-muted text-foreground hover:bg-blue-fantastic hover:text-palladian transition-colors"
@@ -161,7 +171,8 @@ export default function TransactionList({ transactions, total, page, totalPages 
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pagination */}
