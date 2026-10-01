@@ -42,17 +42,16 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
               {/* Details */}
               <div className="flex-1 min-w-0">
                 <p className="font-mono text-xs font-bold truncate">{tx.description}</p>
-                <p className="font-mono text-xs text-muted-foreground">
+                <p className="font-mono text-xs text-muted-foreground truncate">
                   {getCategoryLabel(tx.category)} · {formatDate(tx.transactionDate)}
                 </p>
               </div>
 
               {/* Amount */}
               <p
-                className={`font-pixel text-xs shrink-0 ${
+                className={`font-mono font-bold text-[13px] sm:font-pixel sm:font-normal sm:text-xs whitespace-nowrap shrink-0 ${
                   tx.type === "income" ? "text-burning-flame-ink" : "text-truffle"
                 }`}
-                style={{ fontSize: "12px" }}
               >
                 {tx.type === "income" ? "+" : "-"}
                 {centsToDisplay(tx.amount)}

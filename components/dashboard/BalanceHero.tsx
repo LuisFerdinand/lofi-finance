@@ -4,6 +4,7 @@
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { centsToDisplay, cn } from "@/utils";
+import Amount from "@/components/ui/Amount";
 
 interface BalanceHeroProps {
   /** All-time running balance (every income minus every expense). */
@@ -38,15 +39,17 @@ export default function BalanceHero({
       )}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="font-pixel flex items-center gap-1.5 opacity-70" style={{ fontSize: "10px" }}>
             <Wallet size={11} /> TOTAL BALANCE
           </p>
-          <p className="font-pixel text-base sm:text-xl mt-2 leading-tight break-all">
-            {centsToDisplay(totalBalance)}
-          </p>
-          <div className="flex items-center gap-1.5 mt-2 font-mono text-xs">
-            {monthUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+          <div className="mt-2">
+            <Amount max={26} min={12}>{centsToDisplay(totalBalance)}</Amount>
+          </div>
+          <div className="flex items-start gap-1.5 mt-2 font-mono text-xs sm:text-sm">
+            <span className="mt-0.5 shrink-0">
+              {monthUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+            </span>
             <span>
               {monthUp ? "+" : "-"}
               {centsToDisplay(Math.abs(monthNet))} this month
@@ -54,7 +57,7 @@ export default function BalanceHero({
           </div>
         </div>
 
-        <div className="w-20 h-14 sm:w-36 sm:h-16 shrink-0">
+        <div className="w-16 h-14 sm:w-36 sm:h-16 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trend} margin={{ top: 4, bottom: 4, left: 0, right: 0 }}>
               <YAxis hide domain={["dataMin", "dataMax"]} />
@@ -73,26 +76,20 @@ export default function BalanceHero({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-palladian/20 font-mono text-xs">
-        <div>
-          <p className="opacity-70" style={{ fontSize: "12px" }}>all income</p>
-          <p className="font-pixel mt-1 break-all" style={{ fontSize: "11px" }}>
-            {centsToDisplay(totalIncome)}
-          </p>
-        </div>
-        <div>
-          <p className="opacity-70" style={{ fontSize: "12px" }}>all expense</p>
-          <p className="font-pixel mt-1 break-all" style={{ fontSize: "11px" }}>
-            {centsToDisplay(totalExpense)}
-          </p>
-        </div>
-        <div>
-          <p className="opacity-70" style={{ fontSize: "12px" }}>vs last month</p>
-          <p className="font-pixel mt-1 break-all" style={{ fontSize: "11px" }}>
-            {swing >= 0 ? "+" : "-"}
-            {centsToDisplay(Math.abs(swing))}
-          </p>
-        </div>
+      {/* Rows on phones (label left, amount right), three columns from sm up */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mt-4 pt-3 border-t border-palladian/20 font-mono">
+        {[
+          { label: "all income", value: centsToDisplay(totalIncome) },
+          { label: "all expense", value: centsToDisplay(totalExpense) },
+          { label: "vs last month", value: `${swing >= 0 ? "+" : "-"}${centsToDisplay(Math.abs(swing))}` },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center justify-between gap-3 sm:block">
+            <p className="opacity-70 text-xs whitespace-nowrap sm:mb-1">{s.label}</p>
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <Amount max={14} className="text-right sm:text-left">{s.value}</Amount>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -140,10 +140,10 @@ export default function TransactionList({ transactions, total, page, totalPages 
 
             {/* Amount — one line, right-aligned so the digits line up down the column */}
             <p
-              className={`col-start-2 md:col-start-auto min-w-0 font-pixel md:whitespace-nowrap text-left md:text-right tabular-nums ${
+              className={`col-start-2 md:col-start-auto min-w-0 whitespace-nowrap text-left md:text-right tabular-nums
+                          font-mono font-bold text-sm md:font-pixel md:font-normal md:text-xs ${
                 income ? "text-burning-flame-ink" : "text-truffle"
               }`}
-              style={{ fontSize: "12px" }}
             >
               {income ? "+" : "−"}
               {/* Intl puts a no-break space after "Rp"; a normal space lets a

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getTransactions, getMonthlyStats } from "@/utils/transactions";
 import { getCurrentMonthYear, formatMonth, centsToDisplay } from "@/utils";
 import { categorySchema, transactionTypeSchema } from "@/utils/transaction-schema";
+import Amount from "@/components/ui/Amount";
 import TransactionList from "@/components/transactions/TransactionList";
 import TransactionFiltersBar from "@/components/transactions/TransactionFiltersBar";
 import MonthPicker from "@/components/transactions/MonthPicker";
@@ -77,22 +78,33 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
       <MonthPicker currentMonth={month} currentYear={year} />
 
       {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="pixel-box-sm bg-burning-flame text-abyssal p-3 text-center">
-          <p className="font-pixel leading-none mb-1.5" style={{ fontSize: "9px" }}>INCOME</p>
-          <p className="font-pixel text-xs break-all">{centsToDisplay(stats.totalIncome)}</p>
-        </div>
-        <div className="pixel-box-sm bg-truffle text-palladian p-3 text-center">
-          <p className="font-pixel leading-none mb-1.5" style={{ fontSize: "9px" }}>EXPENSE</p>
-          <p className="font-pixel text-xs break-all">{centsToDisplay(stats.totalExpense)}</p>
-        </div>
-        <div className={`pixel-box-sm p-3 text-center ${stats.netBalance >= 0 ? "bg-blue-fantastic text-palladian" : "bg-abyssal text-palladian"}`}>
-          <p className="font-pixel leading-none mb-1.5" style={{ fontSize: "9px" }}>NET</p>
-          <p className="font-pixel text-xs break-all">
-            {stats.netBalance < 0 ? "−" : ""}
-            {centsToDisplay(Math.abs(stats.netBalance))}
-          </p>
-        </div>
+      {/* On phones each stat is a full-width row (label left, amount right) so
+          the whole figure is readable; from sm up they sit as three tiles. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {[
+          { label: "INCOME", value: centsToDisplay(stats.totalIncome), cls: "bg-burning-flame text-abyssal" },
+          { label: "EXPENSE", value: centsToDisplay(stats.totalExpense), cls: "bg-truffle text-palladian" },
+          {
+            label: "NET",
+            value: `${stats.netBalance < 0 ? "−" : ""}${centsToDisplay(Math.abs(stats.netBalance))}`,
+            cls: stats.netBalance >= 0 ? "bg-blue-fantastic text-palladian" : "bg-abyssal text-palladian",
+          },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className={`pixel-box-sm ${s.cls} px-3 py-2.5 sm:p-3 flex items-center gap-3 sm:block sm:text-center`}
+          >
+            <p
+              className="font-pixel leading-none w-[4.5rem] shrink-0 sm:w-auto sm:mb-2"
+              style={{ fontSize: "10px" }}
+            >
+              {s.label}
+            </p>
+            <div className="min-w-0 flex-1 text-right sm:text-center">
+              <Amount max={18} className="text-right sm:text-center">{s.value}</Amount>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}

@@ -1,6 +1,7 @@
 // components/dashboard/StatsGrid.tsx
 import { centsToDisplay } from "@/utils";
 import type { MonthlyStats } from "@/types";
+import Amount from "@/components/ui/Amount";
 import { TrendingUp, TrendingDown, Wallet, Activity } from "lucide-react";
 
 interface StatsGridProps {
@@ -26,7 +27,7 @@ export default function StatsGrid({ stats }: StatsGridProps) {
       border: "border-abyssal",
     },
     {
-      label: "NET · MONTH",
+      label: "NET",
       value: centsToDisplay(stats.netBalance),
       icon: Wallet,
       bg: stats.netBalance >= 0 ? "bg-blue-fantastic" : "bg-abyssal",
@@ -48,17 +49,15 @@ export default function StatsGrid({ stats }: StatsGridProps) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`pixel-box ${card.bg} ${card.text} p-4 scanlines`}
+          className={`pixel-box ${card.bg} ${card.text} p-3 sm:p-4 scanlines`}
         >
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between gap-1 mb-3">
             <p className="font-pixel leading-none" style={{ fontSize: "9px" }}>
               {card.label}
             </p>
-            <card.icon size={14} className="opacity-60" />
+            <card.icon size={14} className="opacity-60 shrink-0" />
           </div>
-          <p className="font-pixel text-sm leading-tight break-all">
-            {card.value}
-          </p>
+          <Amount max={18}>{card.value}</Amount>
         </div>
       ))}
     </div>

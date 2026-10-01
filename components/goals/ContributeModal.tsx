@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, AlertTriangle } from "lucide-react";
 import { centsToDisplay, todayISO } from "@/utils";
+import Amount from "@/components/ui/Amount";
 import { calcProgress } from "@/utils/goals-helpers";
 import type { SavingsGoal } from "@/db/schema/goals";
 import RupiahInput from "@/components/ui/RupiahInput";
@@ -121,17 +122,16 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
                 loading balance...
               </p>
             ) : balance ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 shrink-0">
                   <Wallet size={14} className={balance.freeBalance > 0 ? "text-burning-flame shrink-0" : "text-truffle shrink-0"} />
                   <p className={`font-pixel ${balance.freeBalance > 0 ? "text-palladian" : "text-abyssal"}`} style={{ fontSize: "10px" }}>
-                    AVAILABLE BALANCE
+                    AVAILABLE
                   </p>
                 </div>
-                <p className={`font-pixel ${balance.freeBalance > 0 ? "text-burning-flame" : "text-truffle"}`}
-                  style={{ fontSize: "14px" }}>
-                  {centsToDisplay(balance.freeBalance)}
-                </p>
+                <div className={`min-w-0 flex-1 ${balance.freeBalance > 0 ? "text-burning-flame" : "text-truffle"}`}>
+                  <Amount max={16} className="text-right">{centsToDisplay(balance.freeBalance)}</Amount>
+                </div>
               </div>
             ) : (
               <p className="font-mono text-xs text-muted-foreground">balance unavailable</p>
@@ -224,9 +224,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
                         <span className="block text-current opacity-70" style={{ fontSize: "11px" }}>
                           {label}
                         </span>
-                        <span className="block font-pixel" style={{ fontSize: "10px" }}>
-                          {centsToDisplay(capped)}
-                        </span>
+                        <Amount max={12}>{centsToDisplay(capped)}</Amount>
                       </button>
                     );
                   })}
@@ -257,7 +255,7 @@ export default function ContributeModal({ goal, onClose, onSuccess }: Props) {
                         }`}
                     >
                       <span className="block opacity-70" style={{ fontSize: "11px" }}>{label}</span>
-                      <span className="block font-pixel" style={{ fontSize: "10px" }}>{centsToDisplay(val)}</span>
+                      <Amount max={12}>{centsToDisplay(val)}</Amount>
                     </button>
                   ))}
               </div>

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getGoalById, getGoalContributions } from "@/utils/goals";
 import { centsToDisplay, formatDate } from "@/utils";
+import Amount from "@/components/ui/Amount";
 import GoalCard from "@/components/goals/GoalCard";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -41,15 +42,20 @@ export default async function GoalDetailPage({ params }: PageProps) {
         <div className="space-y-4 xl:sticky xl:top-0">
           <GoalCard goal={goal} />
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-2 sm:gap-3">
             {[
               { label: "DEPOSITED", value: centsToDisplay(totalDeposited), bg: "bg-burning-flame", text: "text-abyssal" },
               { label: "WITHDRAWN", value: centsToDisplay(totalWithdrawn), bg: "bg-truffle", text: "text-palladian" },
               { label: "ENTRIES", value: String(contributions.length), bg: "bg-abyssal", text: "text-burning-flame" },
             ].map((s) => (
-              <div key={s.label} className={`pixel-box-sm ${s.bg} ${s.text} p-3 text-center`}>
-                <p className="font-pixel leading-none mb-1" style={{ fontSize: "9px" }}>{s.label}</p>
-                <p className="font-pixel text-xs break-all">{s.value}</p>
+              <div
+                key={s.label}
+                className={`pixel-box-sm ${s.bg} ${s.text} px-3 py-2.5 sm:p-3 flex items-center gap-3 sm:block sm:text-center`}
+              >
+                <p className="font-pixel leading-none w-[5.5rem] shrink-0 sm:w-auto sm:mb-2" style={{ fontSize: "10px" }}>{s.label}</p>
+                <div className="min-w-0 flex-1 text-right sm:text-center">
+                  <Amount max={16} className="text-right sm:text-center">{s.value}</Amount>
+                </div>
               </div>
             ))}
           </div>
@@ -76,7 +82,7 @@ export default async function GoalDetailPage({ params }: PageProps) {
                   )}
                 </div>
                 <p className="font-mono text-xs text-muted-foreground whitespace-nowrap shrink-0">{formatDate(c.contributedAt)}</p>
-                <p className={`font-pixel shrink-0 ${c.amount > 0 ? "text-burning-flame-ink" : "text-truffle"}`} style={{ fontSize: "12px" }}>
+                <p className={`font-mono font-bold text-[13px] sm:font-pixel sm:font-normal sm:text-xs whitespace-nowrap shrink-0 ${c.amount > 0 ? "text-burning-flame-ink" : "text-truffle"}`}>
                   {c.amount > 0 ? "+" : "−"}{centsToDisplay(Math.abs(c.amount))}
                 </p>
               </div>

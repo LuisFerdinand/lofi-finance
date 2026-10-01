@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getGoals, getGoalsSummary } from "@/utils/goals";
 import { centsToDisplay } from "@/utils";
+import Amount from "@/components/ui/Amount";
 import GoalCard from "@/components/goals/GoalCard";
 import AddGoalButton from "@/components/goals/AddGoalButton";
 import type { Metadata } from "next";
@@ -41,9 +42,9 @@ export default async function GoalsPage() {
           { label: "ACTIVE", value: String(summary.active), bg: "bg-abyssal", text: "text-burning-flame" },
           { label: "COMPLETED", value: String(summary.completed), bg: "bg-oatmeal", text: "text-abyssal" },
         ].map((s) => (
-          <div key={s.label} className={`pixel-box ${s.bg} ${s.text} p-4`}>
+          <div key={s.label} className={`pixel-box ${s.bg} ${s.text} p-3 sm:p-4`}>
             <p className="font-pixel leading-none mb-2" style={{ fontSize: "9px" }}>{s.label}</p>
-            <p className="font-pixel text-sm break-all">{s.value}</p>
+            <Amount max={18}>{s.value}</Amount>
           </div>
         ))}
       </div>
